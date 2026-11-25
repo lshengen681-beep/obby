@@ -71,7 +71,7 @@ if((keys[' ']||keys.ArrowUp||keys.w||keys.W)&&p.on){p.vy=-12.8;p.on=false;keys['
 for(const q of world.pads){if(p.x+p.w>q.x&&p.x<q.x+q.w&&p.y+p.h>=q.y&&p.y+p.h<q.y+22&&p.vy>=0){p.y=q.y-p.h;p.vy=-19.5;p.on=false;message.textContent='弹板启动！飞起来！';}}
 for(const q of world.lava){if(p.x+p.w>q.x&&p.x<q.x+q.w&&p.y+p.h>q.y+3)respawn();}
 if(p.y>H+90)respawn();
-world.checks.forEach(q=>{if(!q.hit&&p.x+p.w>q.x-8&&p.x<q.x+34&&p.y+p.h>q.y){q.hit=true;checkpointX=q.x+12;checkpointY=q.y-p.h-2;message.textContent='检查点已保存！';}});
+world.checks.forEach(q=>{if(!q.hit&&p.x+p.w>q.x-8&&p.x<q.x+34&&p.y+p.h>q.y){q.hit=true;checkpointX=q.x+12;checkpointY=q.y+52-p.h-2;message.textContent='检查点已保存！';}});
 if(p.x+p.w>world.goal.x&&p.y+p.h>world.goal.y-12)completeLevel();camera=Math.max(0,Math.min(world.length-W,p.x-300));}
 draw();requestAnimationFrame(update);}
 document.addEventListener('keydown',e=>{if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();keys[e.key]=true;});document.addEventListener('keyup',e=>keys[e.key]=false);
