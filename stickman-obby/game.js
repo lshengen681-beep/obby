@@ -59,10 +59,10 @@ function update(){
   if(slideKey&&!keys._slideLock&&p.slideCooldown===0&&!p.climbing){p.slideTimer=24;p.slideCooldown=60;keys._slideLock=true;}
   if(!slideKey)keys._slideLock=false;
   p.sliding=p.slideTimer>0?1:0;
-  const ladder=world.ladders.find(l=>p.x+p.w>l.x-10&&p.x<l.x+38&&p.y+p.h>=l.from-8&&p.y<=l.from+8);
+  const ladder=world.ladders.find(l=>p.x+p.w>l.x-10&&p.x<l.x+38&&p.y<=l.from+5&&p.y+p.h>=l.to-5);
   const climbKey=!!(keys.ArrowUp||keys.w||keys.W);
   if(ladder&&climbKey){p.climbing=true;p.vy=0;p.y=Math.max(ladder.to-p.h,Math.min(ladder.from-p.h,p.y-3.2));p.x=ladder.x+5;p.on=false;}
-  else if(p.climbing&&!climbKey)p.climbing=false;
+  else if(p.climbing&&(!climbKey||(p.y<=ladder.to-p.h+1&&dir!==0)))p.climbing=false;
   if(!p.climbing){
    p.vx=dir*(p.sliding?6.2:4.25);p.x=Math.max(0,p.x+p.vx);
    const oldY=p.y;p.vy=Math.min(14,p.vy+.62);p.y+=p.vy;p.on=false;
