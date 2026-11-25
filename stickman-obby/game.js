@@ -10,10 +10,10 @@ const themes=[
  ["#ffca72","#fff0c2","#a86c30","#ef3d42","烈焰大楼"],["#182844","#536b98","#384e72","#ff477e","终极高塔"]
 ];
 const gear=[
- {type:"帽子",items:[["无帽",0,""],["棒球帽",90,"🧢"],["王冠",180,"👑"],["巫师帽",220,"🧙"],["皇冠头盔",260,"⛑️"],["猫耳发箍",150,"🐱"],["牛仔帽",170,"🤠"],["恶魔角",210,"😈"],["兔耳朵",190,"🐰"],["圣诞帽",130,"🎅"],["耳机",160,"🎧"]]},
- {type:"衣服",items:[["基础上衣",0,""],["机能夹克",120,"🧥"],["忍者服",200,"🥷"],["宇航服",260,"🚀"],["超级英雄",280,"🦸"],["恐龙连帽衫",230,"🦖"],["披风",210,"🦸‍♂️"],["彩虹卫衣",180,"🌈"],["潜水服",240,"🤿"],["机甲战衣",300,"🤖"]]},
- {type:"裤子",items:[["基础长裤",0,""],["运动裤",100,"👖"],["迷彩裤",170,"🪖"],["黄金裤",240,"✨"],["短裤",90,"🩳"],["星空长裤",210,"🌌"],["忍者裤",190,"🥷"]]},
- {type:"鞋子",items:[["基础鞋",0,""],["跑鞋",110,"👟"],["火焰靴",190,"🔥"],["喷气靴",280,"🚀"],["滑板鞋",170,"🛹"],["弹簧鞋",220,"🌀"],["水晶鞋",250,"💎"]]}
+ {type:"帽子",items:[["无帽",0,""],["棒球帽",90,"🧢"],["王冠",180,"👑"],["巫师帽",220,"🧙"],["皇冠头盔",260,"⛑️"],["猫耳发箍",150,"🐱"],["牛仔帽",170,"🤠"],["恶魔角",210,"😈"],["兔耳朵",190,"🐰"],["圣诞帽",130,"🎅"],["耳机",160,"🎧"],["皇冠发光款",280,"💫"],["熊猫帽",190,"🐼"],["海盗帽",230,"🏴‍☠️"],["星星发夹",120,"⭐"],["厨师帽",150,"👨‍🍳"]]},
+ {type:"衣服",items:[["基础上衣",0,""],["机能夹克",120,"🧥"],["忍者服",200,"🥷"],["宇航服",260,"🚀"],["超级英雄",280,"🦸"],["恐龙连帽衫",230,"🦖"],["披风",210,"🦸‍♂️"],["彩虹卫衣",180,"🌈"],["潜水服",240,"🤿"],["机甲战衣",300,"🤖"],["太空制服",260,"👨‍🚀"],["火焰外套",220,"🔥"],["毛绒熊外套",240,"🧸"],["闪电战衣",290,"⚡"],["海盗披肩",210,"🏴‍☠️"]]},
+ {type:"裤子",items:[["基础长裤",0,""],["运动裤",100,"👖"],["迷彩裤",170,"🪖"],["黄金裤",240,"✨"],["短裤",90,"🩳"],["星空长裤",210,"🌌"],["忍者裤",190,"🥷"],["彩虹短裤",150,"🌈"],["牛仔裤",180,"👖"],["金色护腿",260,"🦿"],["星际裤",230,"🌠"]]},
+ {type:"鞋子",items:[["基础鞋",0,""],["跑鞋",110,"👟"],["火焰靴",190,"🔥"],["喷气靴",280,"🚀"],["滑板鞋",170,"🛹"],["弹簧鞋",220,"🌀"],["水晶鞋",250,"💎"],["彩虹滑轮鞋",230,"🛼"],["火箭鞋",300,"🚀"],["熊猫拖鞋",130,"🐼"],["闪电跑鞋",260,"⚡"],["月光靴",280,"🌙"]]}
 ];
 const skins=[{name:"经典黑",color:"#172238"},{name:"霓虹蓝",color:"#23c9ff"},{name:"烈焰红",color:"#ff594f"},{name:"黄金",color:"#ffc83d"},{name:"森林绿",color:"#48d597"},{name:"紫色",color:"#bd83ff"}];
 function loadSave(){try{const old=JSON.parse(localStorage.getItem("stickmanObbySave")||"{}");return {gems:Number(old.gems)||0,unlocked:Math.max(1,Math.min(100,Number(old.unlocked)||1)),claimed:Array.isArray(old.claimed)?old.claimed:[],owned:old.owned&& !Array.isArray(old.owned)?old.owned:(old.gearOwned||{}),equipped:old.equipped||old.gearEquipped||{},skin:Number(old.skin)||0};}catch(e){return {gems:0,unlocked:1,claimed:[],owned:{},equipped:{},skin:0};}}
@@ -37,9 +37,14 @@ function makeLevel(n){
    if(i===1+(idx%Math.max(2,count-2)))spikes.push({x:x+w*.48,y:py-16,w:34,h:16});
   }
   platforms.push({x:f.end-150,y:f.y,w:150,h:100});
-  const bx=f.start+Math.floor((f.end-f.start)*.53);bonusPlatforms.push({x:bx,y:f.y-155,w:112,h:14,glow:true});
+  const bx=f.start+Math.floor((f.end-f.start)*.53);bonusPlatforms.push({x:bx,y:f.y-165,w:124,h:14,glow:true,doubleJump:true});
  });
  ladders.push({x:810,y:285,h:145,from:430,to:285},{x:1640,y:140,h:145,from:285,to:140});
+ // 四个传送门：前两个在一楼互通，后两个在二楼互通，不会跳过爬上三楼的最终路线。
+ portals.push(
+  {x:50,y:372,w:34,h:58,toX:700}, {x:700,y:372,w:34,h:58,toX:50},
+  {x:900,y:227,w:34,h:58,toX:1530}, {x:1530,y:227,w:34,h:58,toX:900}
+ );
  const goal={x:2440,y:110};
  return {name:t[4]+" "+n,sky:t[0],sky2:t[1],ground:t[2],lavaColor:t[3],platforms,lava,pads,checks,ladders,spikes,portals,bonusPlatforms,goal,length:2700};
 }
@@ -50,7 +55,8 @@ function completeLevel(){if(won)return;won=true;mode="won";if(!save.claimed.incl
 function respawn(){deaths++;p.x=checkpointX;p.y=checkpointY;p.vx=0;p.vy=0;p.jumps=0;p.sliding=0;p.slideTimer=0;p.climbing=false;camera=Math.max(0,Math.min(world.length-W,p.x-300));message.textContent="回到检查点。失误："+deaths;}
 function rect(x,y,w,h,color){ctx.fillStyle=color;ctx.fillRect(x-camera,y,w,h);}
 function drawStick(){const x=p.x-camera+12,y=p.y,skin=skins[save.skin]||skins[0],slide=p.sliding>0,phase=clock*.22,leg=p.on?Math.sin(phase)*.75:0,arm=p.on?Math.cos(phase)*.55:-.3;ctx.strokeStyle=skin.color;ctx.lineWidth=3;ctx.lineCap="round";ctx.lineJoin="round";ctx.beginPath();ctx.arc(x,y+8,8,0,Math.PI*2);ctx.moveTo(x,y+17);ctx.lineTo(x,y+33);ctx.stroke();ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(x-3,y+7,1.7,0,Math.PI*2);ctx.arc(x+3,y+7,1.7,0,Math.PI*2);ctx.fill();ctx.strokeStyle="#172238";ctx.lineWidth=1.3;ctx.beginPath();ctx.arc(x,y+11,2.6,0.15,Math.PI-.15);ctx.stroke();ctx.strokeStyle=skin.color;ctx.lineWidth=2.6;ctx.beginPath();if(slide){ctx.moveTo(x,y+26);ctx.lineTo(x+13,y+40);ctx.lineTo(x+24,y+43);ctx.moveTo(x,y+26);ctx.lineTo(x-12,y+40);ctx.lineTo(x-22,y+43);}else{ctx.moveTo(x,y+21);ctx.lineTo(x-9+arm*5,y+27);ctx.lineTo(x-13+arm*8,y+34);ctx.moveTo(x,y+21);ctx.lineTo(x+9-arm*5,y+27);ctx.lineTo(x+13-arm*8,y+34);ctx.moveTo(x,y+33);ctx.lineTo(x-8+leg*9,y+47);ctx.moveTo(x,y+33);ctx.lineTo(x+8-leg*9,y+47);}ctx.stroke();const hat=gear[0].items[save.equipped["帽子"]],shirt=gear[1].items[save.equipped["衣服"]],pants=gear[2].items[save.equipped["裤子"]],shoes=gear[3].items[save.equipped["鞋子"]];ctx.font="17px sans-serif";if(hat[2])ctx.fillText(hat[2],x-9,y+1);if(shirt[2])ctx.fillText(shirt[2],x-9,y+30);if(pants[2])ctx.fillText(pants[2],x-8,y+45);if(shoes[2])ctx.fillText(shoes[2],x-10,y+54);}
-function draw(){if(!world){ctx.fillStyle="#15263d";ctx.fillRect(0,0,W,H);return;}const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,world.sky);g.addColorStop(1,world.sky2);ctx.fillStyle=g;ctx.fillRect(0,0,W,H);ctx.globalAlpha=.22;for(let i=0;i<12;i++){const xx=((i*170-camera*.2)%(W+180)+W+180)%(W+180)-70;ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(xx,75+(i%4)*42,25,0,7);ctx.fill();}ctx.globalAlpha=1;world.platforms.forEach(q=>{rect(q.x,q.y,q.w,q.h,world.ground);rect(q.x,q.y,q.w,5,"#ffffff77");});world.lava.forEach(q=>{rect(q.x,q.y,q.w,q.h,world.lavaColor);rect(q.x,q.y,q.w,6,"#ffd166");});world.pads.forEach(q=>{rect(q.x,q.y,q.w,q.h,"#ffcf58");rect(q.x+4,q.y+2,q.w-8,4,"#fff2a8");});world.bonusPlatforms.forEach(q=>{rect(q.x,q.y,q.w,q.h,"#b8a5ff");rect(q.x,q.y,q.w,4,"#fff");});world.spikes.forEach(q=>{ctx.fillStyle="#f4f7ff";ctx.beginPath();ctx.moveTo(q.x-camera,q.y+q.h);ctx.lineTo(q.x-camera+q.w/2,q.y);ctx.lineTo(q.x-camera+q.w,q.y+q.h);ctx.closePath();ctx.fill();ctx.strokeStyle="#d94b61";ctx.stroke();});world.portals.forEach((q,i)=>{ctx.save();ctx.shadowColor=i%2?"#42e7ff":"#d77bff";ctx.shadowBlur=16;ctx.strokeStyle=i%2?"#42e7ff":"#d77bff";ctx.lineWidth=6;ctx.beginPath();ctx.ellipse(q.x-camera+q.w/2,q.y+q.h/2,q.w/2,q.h/2,0,0,Math.PI*2);ctx.stroke();ctx.restore();});world.ladders.forEach(l=>{rect(l.x,l.y,6,l.h,"#9b7046");rect(l.x+24,l.y,6,l.h,"#9b7046");for(let ry=l.y+8;ry<l.y+l.h;ry+=18)rect(l.x+5,ry,26,5,"#d9b17a");});world.checks.forEach(q=>{rect(q.x,q.y,5,52,"#26344b");rect(q.x+5,q.y,27,16,q.hit?"#39d5a4":"#ffcf58");});rect(world.goal.x,world.goal.y,5,75,"#26344b");rect(world.goal.x+5,world.goal.y,40,24,"#ffcf58");ctx.fillStyle="#172238";ctx.font="bold 14px sans-serif";ctx.fillText("FINISH",world.goal.x-camera-4,world.goal.y-10);drawStick();ctx.fillStyle="#172238aa";ctx.fillRect(18,18,190,38);ctx.fillStyle="#fff";ctx.font="bold 16px sans-serif";ctx.fillText("LEVEL "+level+" · "+world.name,30,43);}
+function draw(){if(!world){ctx.fillStyle="#15263d";ctx.fillRect(0,0,W,H);return;}const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,world.sky);g.addColorStop(1,world.sky2);ctx.fillStyle=g;ctx.fillRect(0,0,W,H);ctx.globalAlpha=.22;for(let i=0;i<12;i++){const xx=((i*170-camera*.2)%(W+180)+W+180)%(W+180)-70;ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(xx,75+(i%4)*42,25,0,7);ctx.fill();}ctx.globalAlpha=1;world.platforms.forEach(q=>{rect(q.x,q.y,q.w,q.h,world.ground);rect(q.x,q.y,q.w,5,"#ffffff77");});
+ [["一楼 · 1F",90,430],["二楼 · 2F",940,285],["三楼 · 3F",1770,140]].forEach(a=>{ctx.fillStyle="#ffffffcc";ctx.font="bold 15px sans-serif";ctx.fillText(a[0],a[1]-camera,a[2]-18);});world.lava.forEach(q=>{rect(q.x,q.y,q.w,q.h,world.lavaColor);rect(q.x,q.y,q.w,6,"#ffd166");});world.pads.forEach(q=>{rect(q.x,q.y,q.w,q.h,"#ffcf58");rect(q.x+4,q.y+2,q.w-8,4,"#fff2a8");});world.bonusPlatforms.forEach(q=>{rect(q.x,q.y,q.w,q.h,"#b8a5ff");rect(q.x,q.y,q.w,4,"#fff");ctx.fillStyle="#fff";ctx.font="bold 12px sans-serif";ctx.fillText("二段跳平台",q.x-camera+8,q.y-7);});world.spikes.forEach(q=>{ctx.fillStyle="#f4f7ff";ctx.beginPath();ctx.moveTo(q.x-camera,q.y+q.h);ctx.lineTo(q.x-camera+q.w/2,q.y);ctx.lineTo(q.x-camera+q.w,q.y+q.h);ctx.closePath();ctx.fill();ctx.strokeStyle="#d94b61";ctx.stroke();});world.portals.forEach((q,i)=>{ctx.save();ctx.shadowColor=i%2?"#42e7ff":"#d77bff";ctx.shadowBlur=16;ctx.strokeStyle=i%2?"#42e7ff":"#d77bff";ctx.lineWidth=6;ctx.beginPath();ctx.ellipse(q.x-camera+q.w/2,q.y+q.h/2,q.w/2,q.h/2,0,0,Math.PI*2);ctx.stroke();ctx.fillStyle="#fff";ctx.font="bold 12px sans-serif";ctx.fillText("P"+(i+1),q.x-camera+8,q.y-7);ctx.restore();});world.ladders.forEach(l=>{rect(l.x,l.y,6,l.h,"#9b7046");rect(l.x+24,l.y,6,l.h,"#9b7046");for(let ry=l.y+8;ry<l.y+l.h;ry+=18)rect(l.x+5,ry,26,5,"#d9b17a");});world.checks.forEach(q=>{rect(q.x,q.y,5,52,"#26344b");rect(q.x+5,q.y,27,16,q.hit?"#39d5a4":"#ffcf58");});rect(world.goal.x,world.goal.y,5,75,"#26344b");rect(world.goal.x+5,world.goal.y,40,24,"#ffcf58");ctx.fillStyle="#172238";ctx.font="bold 14px sans-serif";ctx.fillText("FINISH",world.goal.x-camera-4,world.goal.y-10);drawStick();ctx.fillStyle="#172238aa";ctx.fillRect(18,18,190,38);ctx.fillStyle="#fff";ctx.font="bold 16px sans-serif";ctx.fillText("LEVEL "+level+" · "+world.name,30,43);}
 function update(){
  clock++;
  if(mode==="game"&&!won){
@@ -80,7 +86,8 @@ function update(){
   for(const q of world.lava){if(p.x+p.w>q.x&&p.x<q.x+q.w&&p.y+p.h>q.y+3){respawn();break;}}
   if(p.y>H+90)respawn();
   world.checks.forEach(q=>{if(!q.hit&&p.x+p.w>q.x-8&&p.x<q.x+34&&p.y+p.h>q.y){q.hit=true;checkpointX=q.x+12;checkpointY=q.y+52-p.h-2;message.textContent="检查点已保存！";}});
-  if(p.x+p.w>world.goal.x&&p.y+p.h>world.goal.y-12)completeLevel();
+  // 只有角色到达三楼旗子所在位置并碰到旗帜，才算本关完成。
+  if(p.x+p.w>world.goal.x&&p.x<world.goal.x+46&&p.y<world.goal.y+75&&p.y+p.h>world.goal.y)completeLevel();
   camera=Math.max(0,Math.min(world.length-W,p.x-300));
   message.textContent=p.slideCooldown>0?"滑铲冷却："+(p.slideCooldown/60).toFixed(1)+" 秒":(p.climbing?"正在爬梯子":"滑铲就绪 · C 键滑铲");
  }
