@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Stickman Obby</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#101827;color:#fff;font-family:system-ui,Arial;display:flex;min-height:100vh;align-items:center;justify-content:center}
+.wrap{width:min(100%,1000px);padding:16px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+h1{font-size:clamp(22px,4vw,32px);margin:0;color:#8be9fd}.hint{color:#b8c4d8;font-size:14px}
+canvas{width:100%;height:auto;display:block;border:3px solid #40516d;border-radius:14px;background:#b8e7ff;box-shadow:0 16px 45px #0007}
+.hud{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.pill{background:#26344b;padding:7px 12px;border-radius:99px;font-size:14px}
+button{background:#36c5a1;color:#071a20;border:0;padding:9px 15px;border-radius:9px;font-weight:800;cursor:pointer}
+.mobile{display:none;justify-content:center;gap:12px;margin-top:12px}.mobile button{min-width:66px;font-size:20px;touch-action:none}
+@media(max-width:650px){.mobile{display:flex}.hint{font-size:12px}}
+</style>
+</head>
+<body><main class="wrap">
+<div class="top"><div><h1>🕹️ Stickman Obby</h1><div class="hint">跑过平台，躲开熔岩，冲向终点！</div></div>
+<div class="hud"><span class="pill" id="status">关卡 1 · 出发！</span><span class="pill" id="deaths">失误：0</span><button id="restart">重新开始 ↻</button></div></div>
+<canvas id="game" width="960" height="540" aria-label="火柴人跑酷游戏"></canvas>
+<div class="hint" style="margin-top:10px">键盘：← → 或 A / D 移动，空格 / ↑ / W 跳跃。踩到绿色旗帜可保存检查点。</div>
+<div class="mobile"><button id="left">◀</button><button id="jump">⬆ 跳</button><button id="right">▶</button></div>
+</main>
+<script>
+const c=document.getElementById('game'),ctx=c.getContext('2d');
+const statusEl=document.getElementById('status'),deathsEl=document.getElementById('deaths');
+const W=c.width,H=c.height;
+const platforms=[
+{x:0,y:470,w:230,h:70},{x:285,y:425,w:125,h:18},{x:465,y:365,w:120,h:18},
+{x:640,y:315,w:125,h:18},{x:820,y:380,w:140,h:18},{x:1030,y:330,w:125,h:18},
+{x:1210,y:270,w:130,h:18},{x:1400,y:340,w:140,h:18},{x:1610,y:285,w:130,h:18},
+{x:1810,y:390,w:180,h:18},{x:2050,y:330,w:160,h:18},{x:2290,y:260,w:150,h:18},
+{x:2510,y:350,w:180,h:18},{x:2780,y:420,w:280,h:70}
+];
+const lava=[{x:230,y:490,w:55,h:50},{x:410,y:485,w:55,h:55},{x:585,y:485,w:55,h:55},
+{x:765,y:485,w:55,h:55},{x:960,y:485,w:70,h:55},{x:1155,y:485,w:55,h:55},
+{x:1340,y:485,w:60,h:55},{x:1540,y:485,w:70,h:55},{x:1740,y:485,w:70,h:55},
+{x:1990,y:485,w:60,h:55},{x:2210,y:485,w:80,h:55},{x:2440,y:485,w:70,h:55},
+{x:2690,y:485,w:90,h:55}];
+const checkpoints=[{x:1415,y:300,hit:false},{x:2310,y:220,hit:false}];
+const goal={x:2910,y:350,w:35,h:70};
+let p,cam=0,keys={},deaths=0,checkpoint={x:55,y:420},won=false;
+function reset(full=false){if(full){deaths=0;checkpoints.forEach(q=>q.hit=false);checkpoint={x:55,y:420};}
+p={x:checkpoint.x,y:checkpoint.y,vx:0,vy:0,w:22,h:48,on:false};cam=0;won=false;statusEl.textContent='关卡 1 · 出发！';deathsEl.textContent='失误：'+deaths;}
+function respawn(){deaths++;deathsEl.textContent='失误：'+deaths;p.x=checkpoint.x;p.y=checkpoint.y;p.vx=p.vy=0;}
+function rect(x,y,w,h,color){ctx.fillStyle=color;ctx.fillRect(x-cam,y,w,h)}
+function drawStick(){let x=p.x-cam,y=p.y;ctx.strokeStyle='#152238';ctx.lineWidth=5;ctx.lineCap='round';
+ctx.beginPath();ctx.arc(x+11,y+9,8,0,Math.PI*2);ctx.stroke();
+ctx.beginPath();ctx.moveTo(x+11,y+18);ctx.lineTo(x+11,y+34);ctx.moveTo(x+11,y+22);ctx.lineTo(x+1,y+29);ctx.moveTo(x+11,y+22);ctx.lineTo(x+22,y+28);
+ctx.moveTo(x+11,y+34);ctx.lineTo(x+3,y+47);ctx.moveTo(x+11,y+34);ctx.lineTo(x+20,y+47);ctx.stroke();}
+function draw(){ctx.clearRect(0,0,W,H);
+let sky=ctx.createLinearGradient(0,0,0,H);sky.addColorStop(0,'#8ed8ff');sky.addColorStop(1,'#e5f8ff');ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
+ctx.fillStyle='#ffffff88';for(let i=0;i<8;i++){let x=((i*180-cam*.25)%1100+1100)%1100;ctx.beginPath();ctx.arc(x,90+i%3*35,24,0,Math.PI*2);ctx.arc(x+25,90+i%3*35,30,0,Math.PI*2);ctx.arc(x+53,90+i%3*35,20,0,Math.PI*2);ctx.fill();}
+for(const q of platforms){rect(q.x,q.y,q.w,q.h,'#347c69');rect(q.x,q.y,q.w,7,'#66d6a3');}
+for(const q of lava){rect(q.x,q.y,q.w,q.h,'#f04452');rect(q.x,q.y,q.w,8,'#ffb347');}
+checkpoints.forEach(q=>{rect(q.x,q.y,5,55,'#344054');rect(q.x+5,q.y,25,17,q.hit?'#35c98b':'#f5c451');});
+rect(goal.x,goal.y,5,75,'#344054');rect(goal.x+5,goal.y,38,24,'#ffd166');ctx.fillStyle='#26344b';ctx.font='bold 15px Arial';ctx.fillText('FINISH',goal.x-cam-1,goal.y-10);
+drawStick();
+if(won){ctx.fillStyle='#102033cc';ctx.fillRect(0,0,W,H);ctx.fillStyle='#fff';ctx.textAlign='center';ctx.font='bold 48px system-ui';ctx.fillText('🏆 YOU WIN!',W/2,H/2-10);ctx.font='20px system-ui';ctx.fillText('你成功通关了！点击重新开始再玩一次',W/2,H/2+35);ctx.textAlign='left';}
+}
+function update(){if(!won){let dir=(keys.ArrowRight||keys.d?1:0)-(keys.ArrowLeft||keys.a?1:0);
+p.vx=dir*4.1;p.x+=p.vx;p.vy+=.62;p.vy=Math.min(p.vy,13);let oldY=p.y;p.y+=p.vy;p.on=false;
+for(const q of platforms){if(p.x+p.w>q.x&&p.x<q.x+q.w&&oldY+p.h<=q.y+5&&p.y+p.h>=q.y&&p.vy>=0){p.y=q.y-p.h;p.vy=0;p.on=true;}}
+if((keys[' ']||keys.ArrowUp||keys.w)&&p.on){p.vy=-12.5;p.on=false;keys[' ']=false;}
+for(const q of lava){if(p.x+p.w>q.x&&p.x<q.x+q.w&&p.y+p.h>q.y+4)respawn();}
+if(p.y>H+100)respawn();
+checkpoints.forEach(q=>{if(!q.hit&&p.x+p.w>q.x-8&&p.x<q.x+35&&p.y+p.h>q.y){q.hit=true;checkpoint={x:q.x+12,y:q.y-48};statusEl.textContent='检查点已保存！';}});
+if(p.x+p.w>goal.x&&p.y+p.h>goal.y-10){won=true;statusEl.textContent='通关成功！';}
+cam=Math.max(0,Math.min(2180,p.x-300));
+}
+draw();requestAnimationFrame(update);}
+document.addEventListener('keydown',e=>{if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();keys[e.key]=true;});
+document.addEventListener('keyup',e=>keys[e.key]=false);
+document.getElementById('restart').onclick=()=>reset(true);
+function hold(id,key){let el=document.getElementById(id);el.addEventListener('pointerdown',e=>{e.preventDefault();keys[key]=true;});['pointerup','pointerleave','pointercancel'].forEach(t=>el.addEventListener(t,()=>keys[key]=false));}
+hold('left','ArrowLeft');hold('right','ArrowRight');hold('jump','ArrowUp');
+reset(true);update();
+</script></body></html>
