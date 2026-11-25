@@ -35,7 +35,7 @@ const gear=[
  {type:"鞋子",items:[["基础鞋",0,""],["跑鞋",110,"👟"],["火焰靴",190,"🔥"],["喷气靴",280,"🚀"]]}
 ];
 const skins=[{name:"经典黑",color:"#172238"},{name:"霓虹蓝",color:"#23c9ff"},{name:"烈焰红",color:"#ff594f"},{name:"黄金",color:"#ffc83d"},{name:"森林绿",color:"#48d597"},{name:"紫色",color:"#bd83ff"}];
-function loadSave(){try{const old=JSON.parse(localStorage.getItem("stickmanObbySave")||"{}");return {gems:Number(old.gems)||0,unlocked:Math.max(1,Math.min(100,Number(old.unlocked)||1)),claimed:Array.isArray(old.claimed)?old.claimed:[],owned:old.owned||{},equipped:old.equipped||{},skin:Number(old.skin)||0};}catch(e){return {gems:0,unlocked:1,claimed:[],owned:{},equipped:{},skin:0};}}
+function loadSave(){try{const old=JSON.parse(localStorage.getItem("stickmanObbySave")||"{}");return {gems:Number(old.gems)||0,unlocked:Math.max(1,Math.min(100,Number(old.unlocked)||1)),claimed:Array.isArray(old.claimed)?old.claimed:[],owned:old.owned&& !Array.isArray(old.owned)?old.owned:(old.gearOwned||{}),equipped:old.equipped||old.gearEquipped||{},skin:Number(old.skin)||0};}catch(e){return {gems:0,unlocked:1,claimed:[],owned:{},equipped:{},skin:0};}}
 let save=loadSave();for(const g of gear){if(!Array.isArray(save.owned[g.type]))save.owned[g.type]=[0];if(!Number.isInteger(save.equipped[g.type]))save.equipped[g.type]=0;}
 function persist(){try{localStorage.setItem("stickmanObbySave",JSON.stringify(save));}catch(e){message.textContent="浏览器无法保存进度，请检查存储设置。";}updateLabels();}
 function updateLabels(){gemLabel.textContent="💎 "+save.gems+" 宝石";levelLabel.textContent="关卡 "+(level||1)+" / 100";}
