@@ -13,8 +13,7 @@ const gear=[
  {type:"帽子",items:[["无帽",0,""],["棒球帽",90,"🧢"],["王冠",180,"👑"],["巫师帽",220,"🧙"],["皇冠头盔",260,"⛑️"],["猫耳发箍",150,"🐱"],["牛仔帽",170,"🤠"],["恶魔角",210,"😈"],["兔耳朵",190,"🐰"],["圣诞帽",130,"🎅"],["耳机",160,"🎧"]]},
  {type:"衣服",items:[["基础上衣",0,""],["机能夹克",120,"🧥"],["忍者服",200,"🥷"],["宇航服",260,"🚀"],["超级英雄",280,"🦸"],["恐龙连帽衫",230,"🦖"],["披风",210,"🦸‍♂️"],["彩虹卫衣",180,"🌈"],["潜水服",240,"🤿"],["机甲战衣",300,"🤖"]]},
  {type:"裤子",items:[["基础长裤",0,""],["运动裤",100,"👖"],["迷彩裤",170,"🪖"],["黄金裤",240,"✨"],["短裤",90,"🩳"],["星空长裤",210,"🌌"],["忍者裤",190,"🥷"]]},
- {type:"鞋子",items:[["基础鞋",0,""],["跑鞋",110,"👟"],["火焰靴",190,"🔥"],["喷气靴",280,"🚀"],["滑板鞋",170,"🛹"],["弹簧鞋",220,"🌀"],["水晶鞋",250,"💎"]]},
- {type:"武器",items:[["泡泡发射器",0,"🔫"],["彩虹激光枪",180,"🔫"],["星星发射器",240,"🌟"],["黄金水枪",200,"💦"],["冰冻发射器",280,"❄️"]]}
+ {type:"鞋子",items:[["基础鞋",0,""],["跑鞋",110,"👟"],["火焰靴",190,"🔥"],["喷气靴",280,"🚀"],["滑板鞋",170,"🛹"],["弹簧鞋",220,"🌀"],["水晶鞋",250,"💎"]]}
 ];
 const skins=[{name:"经典黑",color:"#172238"},{name:"霓虹蓝",color:"#23c9ff"},{name:"烈焰红",color:"#ff594f"},{name:"黄金",color:"#ffc83d"},{name:"森林绿",color:"#48d597"},{name:"紫色",color:"#bd83ff"}];
 function loadSave(){try{const old=JSON.parse(localStorage.getItem("stickmanObbySave")||"{}");return {gems:Number(old.gems)||0,unlocked:Math.max(1,Math.min(100,Number(old.unlocked)||1)),claimed:Array.isArray(old.claimed)?old.claimed:[],owned:old.owned&& !Array.isArray(old.owned)?old.owned:(old.gearOwned||{}),equipped:old.equipped||old.gearEquipped||{},skin:Number(old.skin)||0};}catch(e){return {gems:0,unlocked:1,claimed:[],owned:{},equipped:{},skin:0};}}
