@@ -33,9 +33,11 @@ function makeLevel(n){
    platforms.push({x,y:py,w,h:18});
    if((i+idx+fi)%3===1)lava.push({x:x-gap,y:f.y+28,w:Math.max(18,gap-4),h:72});
    if((i+idx+fi)%4===0)pads.push({x:x+w*.45,y:py-12,w:34,h:12});
-   if(i===Math.floor(count/2))checks.push({x:x+w*.5,y:py-50,hit:false});\n   if(i===1+(idx%Math.max(2,count-2)))spikes.push({x:x+w*.48,y:py-16,w:34,h:16});
+   if(i===Math.floor(count/2))checks.push({x:x+w*.5,y:py-50,hit:false});
+   if(i===1+(idx%Math.max(2,count-2)))spikes.push({x:x+w*.48,y:py-16,w:34,h:16});
   }
-  platforms.push({x:f.end-150,y:f.y,w:150,h:100});\n  const bx=f.start+Math.floor((f.end-f.start)*.53);bonusPlatforms.push({x:bx,y:f.y-82,w:112,h:14,glow:true});
+  platforms.push({x:f.end-150,y:f.y,w:150,h:100});
+  const bx=f.start+Math.floor((f.end-f.start)*.53);bonusPlatforms.push({x:bx,y:f.y-155,w:112,h:14,glow:true});
  });
  ladders.push({x:810,y:285,h:145,from:430,to:285},{x:1640,y:140,h:145,from:285,to:140});
  const goal={x:2440,y:110};
@@ -53,7 +55,8 @@ function update(){
  clock++;
  if(mode==="game"&&!won){
   const dir=(keys.ArrowRight||keys.d||keys.D?1:0)-(keys.ArrowLeft||keys.a||keys.A?1:0);
-  if(p.slideCooldown>0)p.slideCooldown--;\n  if(p.portalCooldown>0)p.portalCooldown--;
+  if(p.slideCooldown>0)p.slideCooldown--;
+  if(p.portalCooldown>0)p.portalCooldown--;
   if(p.slideTimer>0)p.slideTimer--;
   const slideKey=!!(keys.c||keys.C);
   if(slideKey&&!keys._slideLock&&p.slideCooldown===0&&!p.climbing){p.slideTimer=24;p.slideCooldown=60;keys._slideLock=true;}
@@ -71,7 +74,9 @@ function update(){
    if(jp&&!keys._jumpLock&&p.jumps<2){p.vy=p.jumps===0?-12.8:-11.5;p.jumps++;p.on=false;keys._jumpLock=true;}
    if(!jp)keys._jumpLock=false;
   }
-  for(const q of world.spikes){if(p.x+p.w>q.x+4&&p.x<q.x+q.w-4&&p.y+p.h>q.y+4&&p.y+p.h<q.y+q.h+34){respawn();break;}}\n  if(p.portalCooldown===0){const gate=world.portals.find(q=>p.x+p.w>q.x&&p.x<q.x+q.w&&p.y+p.h>q.y&&p.y<q.y+q.h);if(gate){p.x=gate.toX+42;p.y=gate.y+gate.h-p.h;p.vy=0;p.portalCooldown=45;message.textContent="传送门启动！";}}\n  for(const q of world.pads){if(p.x+p.w>q.x&&p.x<q.x+q.w&&p.y+p.h>=q.y&&p.y+p.h<q.y+22&&p.vy>=0){p.y=q.y-p.h;p.vy=-19.5;p.on=false;p.jumps=1;}}
+  for(const q of world.spikes){if(p.x+p.w>q.x+4&&p.x<q.x+q.w-4&&p.y+p.h>q.y+4&&p.y+p.h<q.y+q.h+34){respawn();break;}}
+  if(p.portalCooldown===0){const gate=world.portals.find(q=>p.x+p.w>q.x&&p.x<q.x+q.w&&p.y+p.h>q.y&&p.y<q.y+q.h);if(gate){p.x=gate.toX+42;p.y=gate.y+gate.h-p.h;p.vy=0;p.portalCooldown=45;message.textContent="传送门启动！";}}
+  for(const q of world.pads){if(p.x+p.w>q.x&&p.x<q.x+q.w&&p.y+p.h>=q.y&&p.y+p.h<q.y+22&&p.vy>=0){p.y=q.y-p.h;p.vy=-19.5;p.on=false;p.jumps=1;}}
   for(const q of world.lava){if(p.x+p.w>q.x&&p.x<q.x+q.w&&p.y+p.h>q.y+3){respawn();break;}}
   if(p.y>H+90)respawn();
   world.checks.forEach(q=>{if(!q.hit&&p.x+p.w>q.x-8&&p.x<q.x+34&&p.y+p.h>q.y){q.hit=true;checkpointX=q.x+12;checkpointY=q.y+52-p.h-2;message.textContent="检查点已保存！";}});
