@@ -32,12 +32,15 @@ const battleStats={
  "冲锋枪":{damage:12,rate:5,speed:10,range:380,color:"#ffe28a"},
  "现代步枪":{damage:27,rate:10,speed:11,range:560,color:"#c8ff9c"}
 };
+const BATTLE_WORLD_W=1800;
 const battleArena=[
  {x:145,y:115,w:150,h:78,type:"house"},{x:665,y:112,w:150,h:82,type:"house"},
  {x:420,y:82,w:115,h:58,type:"wall"},{x:350,y:260,w:90,h:38,type:"cover"},
  {x:535,y:255,w:90,h:38,type:"cover"},{x:190,y:345,w:130,h:32,type:"cover"},
  {x:650,y:345,w:130,h:32,type:"cover"},{x:450,y:405,w:60,h:38,type:"crate"},
- {x:55,y:235,w:70,h:42,type:"crate"},{x:835,y:235,w:70,h:42,type:"crate"}
+ {x:55,y:235,w:70,h:42,type:"crate"},{x:835,y:235,w:70,h:42,type:"crate"},
+ {x:1040,y:115,w:150,h:78,type:"house"},{x:1450,y:112,w:150,h:82,type:"house"},
+ {x:1240,y:260,w:110,h:38,type:"cover"},{x:1550,y:345,w:130,h:32,type:"cover"}
 ];
 const battleLoadouts=["突击步枪","狙击枪","冲锋枪","射手步枪","现代步枪"];
 function startBattle(){
@@ -47,15 +50,15 @@ function startBattle(){
   make("你","blue",85,280,battleWeapon,true),
   make("蓝队·突击手","blue",115,390,"突击步枪"),
   make("蓝队·狙击手","blue",220,210,"狙击枪"),
-  make("红队·冲锋手","red",875,280,"冲锋枪"),
-  make("红队·精准射手","red",820,390,"射手步枪"),
-  make("红队·重装兵","red",740,210,"现代步枪")
+  make("红队·冲锋手","red",1690,280,"冲锋枪"),
+  make("红队·精准射手","red",1600,390,"射手步枪"),
+  make("红队·重装兵","red",1510,210,"现代步枪")
  ];
  message.textContent="方向键/WASD移动；靠近敌人自动瞄准射击！";
 }
 function battleBlocked(x,y,r=12){return battleArena.some(o=>x+r>o.x&&x-r<o.x+o.w&&y+r>o.y&&y-r<o.y+o.h);}
 function battleMove(a,dx,dy){
- const nx=Math.max(28,Math.min(W-28,a.x+dx)),ny=Math.max(90,Math.min(455,a.y+dy));
+ const nx=Math.max(28,Math.min(BATTLE_WORLD_W-28,a.x+dx)),ny=Math.max(90,Math.min(455,a.y+dy));
  if(!battleBlocked(nx,a.y))a.x=nx;
  if(!battleBlocked(a.x,ny))a.y=ny;
 }
@@ -102,16 +105,42 @@ function updateBattle(){
    hit.hp-=b.damage;b.life=0;
    if(hit.hp<=0){
     battleScore[b.team]++;
-    hit.hp=0;hit.respawn=85;hit.x=hit.team==="blue"?85:875;hit.y=280;
+    hit.hp=0;hit.respawn=85;hit.x=hit.team==="blue"?85:1690;hit.y=280;
    }
   }
  }
- battleBullets=battleBullets.filter(b=>b.life>0&&b.x>0&&b.x<W&&b.y>55&&b.y<H);
+ battleBullets=battleBullets.filter(b=>b.life>0&&b.x>0&&b.x<BATTLE_WORLD_W&&b.y>55&&b.y<H);
  if(battleScore.blue>=60||battleScore.red>=60){
   mode="battleover";overlay.style.display="flex";
   overlay.innerHTML='<div class="panel"><h1>'+(battleScore.blue>=60?"🏆 蓝队胜利！":"🔴 红队胜利！")+'</h1><p>最终比分：'+battleScore.blue+" : "+battleScore.red+'</p><p>先消灭对方 60 人，赢得比赛！</p><button id="ba">再来一局</button><button id="bh">返回首页</button></div>';
   document.getElementById("ba").onclick=startBattle;document.getElementById("bh").onclick=showHome;
  }
+}
+function drawBattleWeapon(a,x,y){
+ const gun=a.weapon,metal="#263341",steel="#8798a8",dark="#111b27";
+ ctx.save();ctx.translate(x+7,y-27);
+ ctx.fillStyle=metal;ctx.strokeStyle=dark;ctx.lineWidth=1.5;
+ if(gun==="狙击枪"){
+  ctx.fillRect(0,-3,30,5);ctx.fillRect(26,-2,15,2);ctx.fillRect(8,-8,13,4);
+  ctx.fillStyle="#42b8d8";ctx.fillRect(10,-9,10,3);ctx.fillStyle=steel;ctx.fillRect(3,2,7,3);
+  ctx.fillStyle=dark;ctx.fillRect(11,2,4,9);ctx.fillRect(-5,-2,7,3);
+ }else if(gun==="冲锋枪"){
+  ctx.fillRect(0,-3,22,6);ctx.fillRect(19,-2,10,3);ctx.fillRect(4,-7,8,4);
+  ctx.fillStyle=steel;ctx.fillRect(8,3,5,8);ctx.fillStyle=dark;ctx.fillRect(1,2,5,5);
+ }else if(gun==="射手步枪"){
+  ctx.fillRect(0,-3,27,5);ctx.fillRect(24,-2,12,2);ctx.fillRect(8,-8,11,3);
+  ctx.fillStyle="#65b8d0";ctx.fillRect(10,-9,8,2);ctx.fillStyle=steel;ctx.fillRect(12,2,5,7);
+  ctx.fillStyle=dark;ctx.fillRect(0,1,5,5);
+ }else if(gun==="现代步枪"){
+  ctx.fillRect(0,-3,25,6);ctx.fillRect(22,-2,10,3);ctx.fillRect(7,-8,12,4);
+  ctx.fillStyle="#64b8a0";ctx.fillRect(9,-9,9,2);ctx.fillStyle=steel;ctx.fillRect(12,2,5,8);
+  ctx.fillStyle=dark;ctx.fillRect(-5,-2,7,5);
+ }else{
+  ctx.fillRect(0,-3,24,6);ctx.fillRect(22,-2,10,3);ctx.fillRect(6,-8,11,4);
+  ctx.fillStyle=steel;ctx.fillRect(12,2,5,8);ctx.fillStyle=dark;ctx.fillRect(-5,-2,7,5);
+ }
+ ctx.fillStyle="#d4e2ed";ctx.fillRect(2,-4,5,1);
+ ctx.restore();
 }
 function drawBattleStick(a){
  const x=a.x,y=a.y,blue=a.team==="blue",main=blue?"#168cff":"#f04455",dark=blue?"#0753a5":"#9f2034";
@@ -130,9 +159,8 @@ function drawBattleStick(a){
  // helmet with brim and visor
  ctx.fillStyle=dark;ctx.beginPath();ctx.arc(x,y-53,9,Math.PI,Math.PI*2);ctx.lineTo(x+10,y-51);ctx.lineTo(x-10,y-51);ctx.closePath();ctx.fill();
  ctx.fillStyle="#d7e8f7";ctx.fillRect(x+1,y-53,5,2);
- // weapon in hands
- ctx.strokeStyle="#242c38";ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(x+8,y-27);ctx.lineTo(x+20,y-27);ctx.stroke();
- ctx.fillStyle="#596675";ctx.fillRect(x+13,y-30,12,5);
+ // weapon model: every class has a visibly different silhouette
+ drawBattleWeapon(a,x,y);
  ctx.restore();
  // health bar above each helmet
  const bw=38,bx=x-bw/2,by=y-70;
@@ -142,39 +170,95 @@ function drawBattleStick(a){
  ctx.font="bold 10px sans-serif";ctx.textAlign="center";ctx.fillStyle="#172238";ctx.fillText(a.name+(a.player?"（你）":""),x,by-5);ctx.textAlign="left";
 }
 function drawBattle(){
+ const me=battleActors[0],battleCamera=Math.max(0,Math.min(BATTLE_WORLD_W-W,me.x-W*.42));
  const sky=ctx.createLinearGradient(0,0,0,H);sky.addColorStop(0,"#b8d9ed");sky.addColorStop(1,"#d9e5c9");ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
- // battlefield ground and lanes
  ctx.fillStyle="#a9b58c";ctx.fillRect(0,55,W,H-55);
  ctx.fillStyle="#c8b99b";ctx.fillRect(0,205,W,145);
- ctx.fillStyle="#9cae7d";for(let x=0;x<W;x+=48)ctx.fillRect(x,55,2,H-55);
- // houses, crates and defensive cover
+ ctx.fillStyle="#9cae7d";for(let x=-(battleCamera%48);x<W;x+=48)ctx.fillRect(x,55,2,H-55);
  battleArena.forEach(o=>{
+  const ox=o.x-battleCamera;if(ox+o.w<0||ox>W)return;
   if(o.type==="house"){
-   ctx.fillStyle="#7e8995";ctx.fillRect(o.x,o.y,o.w,o.h);
-   ctx.fillStyle="#a94f46";ctx.beginPath();ctx.moveTo(o.x-8,o.y);ctx.lineTo(o.x+o.w/2,o.y-35);ctx.lineTo(o.x+o.w+8,o.y);ctx.closePath();ctx.fill();
-   ctx.fillStyle="#d6e4eb";ctx.fillRect(o.x+18,o.y+18,28,24);ctx.fillRect(o.x+o.w-46,o.y+18,28,24);
-   ctx.fillStyle="#594b42";ctx.fillRect(o.x+o.w/2-13,o.y+40,26,38);
+   ctx.fillStyle="#7e8995";ctx.fillRect(ox,o.y,o.w,o.h);
+   ctx.fillStyle="#a94f46";ctx.beginPath();ctx.moveTo(ox-8,o.y);ctx.lineTo(ox+o.w/2,o.y-35);ctx.lineTo(ox+o.w+8,o.y);ctx.closePath();ctx.fill();
+   ctx.fillStyle="#d6e4eb";ctx.fillRect(ox+18,o.y+18,28,24);ctx.fillRect(ox+o.w-46,o.y+18,28,24);
+   ctx.fillStyle="#594b42";ctx.fillRect(ox+o.w/2-13,o.y+40,26,38);
   }else{
-   ctx.fillStyle=o.type==="cover"?"#6c806e":"#9b805d";ctx.fillRect(o.x,o.y,o.w,o.h);
-   ctx.fillStyle="#d4d0b5";ctx.fillRect(o.x,o.y,o.w,5);
-   ctx.strokeStyle="#56665a";ctx.strokeRect(o.x,o.y,o.w,o.h);
+   ctx.fillStyle=o.type==="cover"?"#6c806e":"#9b805d";ctx.fillRect(ox,o.y,o.w,o.h);
+   ctx.fillStyle="#d4d0b5";ctx.fillRect(ox,o.y,o.w,5);ctx.strokeStyle="#56665a";ctx.strokeRect(ox,o.y,o.w,o.h);
   }
  });
- // scoreboard
  ctx.fillStyle="#18263ddd";ctx.fillRect(W/2-190,10,380,42);
- ctx.fillStyle="#55aaff";ctx.font="bold 22px sans-serif";ctx.fillText("蓝队  "+battleScore.blue, W/2-168,39);
+ ctx.fillStyle="#55aaff";ctx.font="bold 22px sans-serif";ctx.fillText("蓝队  "+battleScore.blue,W/2-168,39);
  ctx.fillStyle="#fff";ctx.font="bold 18px sans-serif";ctx.fillText("先到 60 分获胜",W/2-45,37);
  ctx.fillStyle="#ff6873";ctx.font="bold 22px sans-serif";ctx.fillText(battleScore.red+"  红队",W/2+82,39);
- ctx.font="12px sans-serif";ctx.fillStyle="#26354a";ctx.fillText("方向键 / WASD 移动 · 自动瞄准射击 · 利用房屋和掩体",18,H-14);
- battleBullets.forEach(b=>{ctx.fillStyle=b.color;ctx.shadowColor=b.color;ctx.shadowBlur=9;ctx.beginPath();ctx.arc(b.x,b.y,3.5,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;});
- battleActors.forEach(a=>{if(!a.respawn)drawBattleStick(a);else{ctx.fillStyle="#fff";ctx.font="11px sans-serif";ctx.fillText("复活中",a.x-18,a.y-25);}});
+ ctx.font="12px sans-serif";ctx.fillStyle="#26354a";ctx.fillText("方向键 / WASD 移动 · 自动瞄准射击 · 长距离战场",18,H-14);
+ battleBullets.forEach(b=>{const bx=b.x-battleCamera;if(bx<-5||bx>W+5)return;ctx.fillStyle=b.color;ctx.shadowColor=b.color;ctx.shadowBlur=9;ctx.beginPath();ctx.arc(bx,b.y,3.5,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;});
+ battleActors.forEach(a=>{if(a.x-battleCamera<-50||a.x-battleCamera>W+50)return;const oldX=a.x;a.x-=battleCamera;if(!a.respawn)drawBattleStick(a);else{ctx.fillStyle="#fff";ctx.font="11px sans-serif";ctx.fillText("复活中",a.x-18,a.y-25);}a.x=oldX;});
 }
 const raceDifficultySpeeds={"简单":[4.8,5.2,5.6],"中等":[6.2,6.7,7.2],"困难":[7.8,8.3,8.8],"超困难":[9.2,9.8,10.4]};
 const raceMaps=["霓虹疾速城","云端冲刺塔","熔岩边缘赛道","冰晶闪电道"];
 function raceRecords(){try{return JSON.parse(localStorage.getItem("stickmanRaceRecords")||"[]");}catch(e){return [];}}
 function saveRaceRecord(time,map){const a=raceRecords();a.push({time,map});a.sort((x,y)=>x.time-y.time);try{localStorage.setItem("stickmanRaceRecords",JSON.stringify(a.slice(0,20)));}catch(e){}}
 function showRaceBoard(){const a=raceRecords();mode="raceboard";overlay.style.display="flex";overlay.innerHTML='<div class="panel"><h1>🌍 极速排行榜</h1><p>目前显示本机成绩；全球排名需要接入在线数据库。</p>'+(a.length?a.map((r,i)=>'<p>'+(i+1)+'. '+r.map+'　<strong>'+r.time.toFixed(2)+' 秒</strong></p>').join(""):'<p>还没有比赛记录。</p>')+'<div class="actions"><button id="boardBack">返回首页</button></div></div>';document.getElementById("boardBack").onclick=showHome;}
-function startRace(index){raceMapIndex=index;level=1;world=makeLevel(index*10+1);world.name=raceMaps[index];world.platforms=[];world.lava=[];world.spikes=[];world.pads=[];world.checks=[];world.portals=[];world.bonusPlatforms=[];world.ladders=[{x:810,y:285,h:145,from:430,to:285},{x:1640,y:140,h:145,from:285,to:140}];[{start:0,y:430},{start:850,y:285},{start:1680,y:140}].forEach(f=>{world.platforms.push({x:f.start,y:f.y,w:340,h:100},{x:f.start+370,y:f.y,w:350,h:100},{x:f.start+750,y:f.y,w:100,h:100});});p={x:55,y:382,vx:0,vy:0,w:24,h:48,on:false,jumps:0,sliding:0,slideTimer:0,slideCooldown:0,climbing:false,portalCooldown:0};camera=0;checkpointX=55;checkpointY=382;won=false;raceFinished=false;raceLocked=true;countdownUntil=Date.now()+3000;raceStartAt=countdownUntil;raceElapsed=0;raceTrail=[];const speeds=raceDifficultySpeeds[raceDifficulty]||raceDifficultySpeeds["中等"];raceBots=[{name:"AI 小闪",x:55,y:382,speed:speeds[0],color:"#ff5b72",trail:[]},{name:"AI 蓝电",x:55,y:382,speed:speeds[1],color:"#41d9ff",trail:[]},{name:"AI 星火",x:55,y:382,speed:speeds[2],color:"#ffd45b",trail:[]}];mode="race";overlay.style.display="none";message.textContent="双倍速度！二段跳开启，禁止滑铲！";updateLabels();}
+function startRace(index){
+ raceMapIndex=index;level=1;
+ const mapLooks=[
+  {sky:"#101b48",sky2:"#5c3e9b",ground:"#263b70",lava:"#ff42d6",accent:"#39e7ff",label:"霓虹疾速城"},
+  {sky:"#7bc9f4",sky2:"#e8f8ff",ground:"#e8f3ff",lava:"#7cbbd9",accent:"#ffffff",label:"云端冲刺塔"},
+  {sky:"#571c19",sky2:"#f59a42",ground:"#60402f",lava:"#ff5b20",accent:"#ffd15c",label:"熔岩边缘赛道"},
+  {sky:"#a6eaff",sky2:"#f4fdff",ground:"#8fc6df",lava:"#46bce8",accent:"#ffffff",label:"冰晶闪电道"}
+ ];
+ const look=mapLooks[index%4],length=3750;
+ world={name:look.label,sky:look.sky,sky2:look.sky2,ground:look.ground,lavaColor:look.lava,
+  platforms:[],lava:[],spikes:[],pads:[],checks:[],portals:[],bonusPlatforms:[],
+  ladders:[{x:1190,y:285,h:145,from:430,to:285},{x:2440,y:140,h:145,from:285,to:140}],
+  goal:{x:3570,y:110},length};
+ const floors=[{start:0,end:1250,y:430},{start:1250,end:2500,y:285},{start:2500,end:length,y:140}];
+ floors.forEach((f,fi)=>{
+  // distinct platform rhythm for each course; gaps and raised stepping ledges are kept jumpable.
+  const gapPattern=[
+   [0,1,0,2,0,1,0,0,2,0,1,0],
+   [2,0,1,0,2,0,0,1,0,2,0,1],
+   [0,2,1,0,0,2,0,1,2,0,0,1],
+   [1,0,2,0,1,0,2,0,0,1,2,0]
+  ][index%4];
+  const segment=100;
+  for(let j=0;j<12;j++){
+   const x=f.start+8+j*segment,variation=gapPattern[j];
+   world.platforms.push({x,y:f.y-variation*18,w:segment-8,h:18});
+   // light, varied hazards rather than a wall of obstacles
+   if((j+fi+index)%4===1)world.spikes.push({x:x+42,y:f.y-variation*18-15,w:22,h:15});
+   if((j*2+fi+index)%7===3)world.lava.push({x:x+70,y:f.y+25,w:18,h:55});
+  }
+  world.platforms.push({x:f.end-12,y:f.y,w:20,h:100});
+ });
+ // Each map gets its own recognizable obstacle placement and decorative color treatment.
+ world.raceAccent=look.accent;
+ world.raceDecor=[
+  {x:260,y:345,type:index===0?"neon":"tower"},
+  {x:790,y:345,type:index===1?"cloud":"arch"},
+  {x:1530,y:200,type:index===2?"volcano":"arch"},
+  {x:2850,y:65,type:index===3?"crystal":"tower"}
+ ];
+ // Add a few route-specific jump obstacles and spring pads.
+ const obstacleSets=[
+  [520,970,1710,2180,3020],
+  [350,1120,1580,2070,2910,3330],
+  [430,880,1460,1950,2730,3240],
+  [610,1040,1660,2280,2810,3420]
+ ];
+ obstacleSets[index%4].forEach((x,i)=>{
+  const tier=x<1250?0:x<2500?1:2,y=[430,285,140][tier];
+  world.spikes.push({x,y:y-16,w:28,h:16});
+  if(i%2===1)world.pads.push({x:x+85,y:y-12,w:34,h:12});
+ });
+ p={x:55,y:382,vx:0,vy:0,w:24,h:48,on:false,jumps:0,sliding:0,slideTimer:0,slideCooldown:0,climbing:false,portalCooldown:0};
+ camera=0;checkpointX=55;checkpointY=382;won=false;raceFinished=false;raceLocked=true;
+ countdownUntil=Date.now()+3000;raceStartAt=countdownUntil;raceElapsed=0;raceTrail=[];
+ const speeds=raceDifficultySpeeds[raceDifficulty]||raceDifficultySpeeds["中等"];
+ raceBots=[{name:"AI 小闪",x:55,y:382,speed:speeds[0],color:"#ff5b72",trail:[]},{name:"AI 蓝电",x:55,y:382,speed:speeds[1],color:"#41d9ff",trail:[]},{name:"AI 星火",x:55,y:382,speed:speeds[2],color:"#ffd45b",trail:[]}];
+ mode="race";overlay.style.display="none";message.textContent="赛道已加长！注意躲避障碍，冲向终点！";updateLabels();
+}
 function showRaceMenu(){mode="racemenu";overlay.style.display="flex";overlay.innerHTML='<div class="panel"><h1>⚡ 极速竞赛</h1><p>你和 3 名 AI 同时起跑。双倍速度、二段跳、不能滑铲，先碰到旗子的人获胜！</p><p><strong>选择 AI 难度：</strong></p><div class="actions">'+["简单","中等","困难","超困难"].map(d=>'<button class="'+(raceDifficulty===d?"gold":"alt")+'" data-difficulty="'+d+'">'+d+'</button>').join("")+'</div><p>当前难度：'+raceDifficulty+'</p><div class="cards">'+raceMaps.map((m,i)=>'<div class="item"><div class="preview">'+["🌆","☁️","🌋","❄️"][i]+'</div><b>'+m+'</b><button data-map="'+i+'">开始比赛</button></div>').join("")+'</div><div class="actions"><button class="alt" id="raceBack">返回首页</button><button class="alt" id="raceBoard">排行榜</button></div></div>';overlay.querySelectorAll("[data-map]").forEach(b=>b.onclick=()=>startRace(Number(b.dataset.map)));overlay.querySelectorAll("[data-difficulty]").forEach(b=>b.onclick=()=>{raceDifficulty=b.dataset.difficulty;showRaceMenu();});document.getElementById("raceBack").onclick=showHome;document.getElementById("raceBoard").onclick=showRaceBoard;}
 function finishRace(playerWon,winner){if(raceFinished)return;raceFinished=true;raceElapsed=(Date.now()-raceStartAt)/1000;if(playerWon)saveRaceRecord(raceElapsed,world.name);mode="raceover";overlay.style.display="flex";overlay.innerHTML='<div class="panel"><h1>'+(playerWon?"🏆 你赢了！":"⚡ 比赛结束")+'</h1><p>'+(playerWon?"你第一个碰到终点旗子！":winner+" 抢先碰到旗子！")+'</p><p style="font-size:28px;color:#ffdc70">你的时间：'+raceElapsed.toFixed(2)+' 秒</p><div class="actions"><button id="raceAgain">再比一次</button><button class="alt" id="raceRanks">排行榜</button><button class="alt" id="raceHome">首页</button></div></div>';document.getElementById("raceAgain").onclick=()=>startRace(raceMapIndex);document.getElementById("raceRanks").onclick=showRaceBoard;document.getElementById("raceHome").onclick=showHome;}
 const keys=Object.create(null);
@@ -212,6 +296,8 @@ function respawn(){deaths++;p.x=checkpointX;p.y=checkpointY;p.vx=0;p.vy=0;p.jump
 function rect(x,y,w,h,color){ctx.fillStyle=color;ctx.fillRect(x-camera,y,w,h);}
 function drawStick(){const x=p.x-camera+12,y=p.y,skin=skins[save.skin]||skins[0],slide=p.sliding>0,phase=clock*.22,leg=p.on?Math.sin(phase)*.75:0,arm=p.on?Math.cos(phase)*.55:-.3;if(mode==="race"){for(let i=0;i<7;i++){ctx.globalAlpha=(7-i)/18;ctx.fillStyle="#9b72ff";ctx.beginPath();ctx.arc(x-(i+1)*5,y+23,3+(7-i)*.35,0,Math.PI*2);ctx.fill();}ctx.globalAlpha=1;}ctx.strokeStyle=skin.color;ctx.lineWidth=3;ctx.lineCap="round";ctx.lineJoin="round";ctx.beginPath();ctx.arc(x,y+8,8,0,Math.PI*2);ctx.moveTo(x,y+17);ctx.lineTo(x,y+33);ctx.stroke();ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(x-3,y+7,1.7,0,Math.PI*2);ctx.arc(x+3,y+7,1.7,0,Math.PI*2);ctx.fill();ctx.strokeStyle="#172238";ctx.lineWidth=1.3;ctx.beginPath();ctx.arc(x,y+11,2.6,0.15,Math.PI-.15);ctx.stroke();ctx.strokeStyle=skin.color;ctx.lineWidth=2.6;ctx.beginPath();if(slide){ctx.moveTo(x,y+26);ctx.lineTo(x+13,y+40);ctx.lineTo(x+24,y+43);ctx.moveTo(x,y+26);ctx.lineTo(x-12,y+40);ctx.lineTo(x-22,y+43);}else{ctx.moveTo(x,y+21);ctx.lineTo(x-9+arm*5,y+27);ctx.lineTo(x-13+arm*8,y+34);ctx.moveTo(x,y+21);ctx.lineTo(x+9-arm*5,y+27);ctx.lineTo(x+13-arm*8,y+34);ctx.moveTo(x,y+33);ctx.lineTo(x-8+leg*9,y+47);ctx.moveTo(x,y+33);ctx.lineTo(x+8-leg*9,y+47);}ctx.stroke();const hat=gear[0].items[save.equipped["帽子"]],shirt=gear[1].items[save.equipped["衣服"]],pants=gear[2].items[save.equipped["裤子"]],shoes=gear[3].items[save.equipped["鞋子"]];ctx.font="17px sans-serif";if(hat[2])ctx.fillText(hat[2],x-9,y+1);if(shirt[2])ctx.fillText(shirt[2],x-9,y+30);if(pants[2])ctx.fillText(pants[2],x-8,y+45);if(shoes[2])ctx.fillText(shoes[2],x-10,y+54);}
 function draw(){if(!world){ctx.fillStyle="#15263d";ctx.fillRect(0,0,W,H);return;}const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,world.sky);g.addColorStop(1,world.sky2);ctx.fillStyle=g;ctx.fillRect(0,0,W,H);ctx.globalAlpha=.22;for(let i=0;i<12;i++){const xx=((i*170-camera*.2)%(W+180)+W+180)%(W+180)-70;ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(xx,75+(i%4)*42,25,0,7);ctx.fill();}ctx.globalAlpha=1;world.platforms.forEach(q=>{rect(q.x,q.y,q.w,q.h,world.ground);rect(q.x,q.y,q.w,5,"#ffffff77");});
+ if(mode==="race"&&world.raceDecor){world.raceDecor.forEach(o=>{const x=o.x-camera;if(x<-80||x>W+80)return;ctx.save();ctx.fillStyle=world.raceAccent||"#fff";ctx.globalAlpha=.72;if(o.type==="cloud"){ctx.beginPath();ctx.arc(x,100,34,0,Math.PI*2);ctx.arc(x+30,95,26,0,Math.PI*2);ctx.fill();}else if(o.type==="crystal"){ctx.beginPath();ctx.moveTo(x,130);ctx.lineTo(x+30,40);ctx.lineTo(x+65,130);ctx.closePath();ctx.fill();}else if(o.type==="volcano"){ctx.beginPath();ctx.moveTo(x-20,180);ctx.lineTo(x+30,75);ctx.lineTo(x+90,180);ctx.closePath();ctx.fill();}else{ctx.fillRect(x,145,20,130);ctx.fillRect(x+38,110,18,165);ctx.fillRect(x+70,165,20,110);}ctx.restore();});}
+
  [["一楼 · 1F",90,430],["二楼 · 2F",940,285],["三楼 · 3F",1770,140]].forEach(a=>{ctx.fillStyle="#ffffffcc";ctx.font="bold 15px sans-serif";ctx.fillText(a[0],a[1]-camera,a[2]-18);});world.lava.forEach(q=>{rect(q.x,q.y,q.w,q.h,world.lavaColor);rect(q.x,q.y,q.w,6,"#ffd166");});world.pads.forEach(q=>{rect(q.x,q.y,q.w,q.h,"#ffcf58");rect(q.x+4,q.y+2,q.w-8,4,"#fff2a8");});world.bonusPlatforms.forEach(q=>{rect(q.x,q.y,q.w,q.h,"#b8a5ff");rect(q.x,q.y,q.w,4,"#fff");ctx.fillStyle="#fff";ctx.font="bold 12px sans-serif";ctx.fillText("二段跳平台",q.x-camera+8,q.y-7);});world.spikes.forEach(q=>{ctx.fillStyle="#f4f7ff";ctx.beginPath();ctx.moveTo(q.x-camera,q.y+q.h);ctx.lineTo(q.x-camera+q.w/2,q.y);ctx.lineTo(q.x-camera+q.w,q.y+q.h);ctx.closePath();ctx.fill();ctx.strokeStyle="#d94b61";ctx.stroke();});world.portals.forEach((q,i)=>{ctx.save();ctx.shadowColor=i%2?"#42e7ff":"#d77bff";ctx.shadowBlur=16;ctx.strokeStyle=i%2?"#42e7ff":"#d77bff";ctx.lineWidth=6;ctx.beginPath();ctx.ellipse(q.x-camera+q.w/2,q.y+q.h/2,q.w/2,q.h/2,0,0,Math.PI*2);ctx.stroke();ctx.fillStyle="#fff";ctx.font="bold 12px sans-serif";ctx.fillText("P"+(i+1),q.x-camera+8,q.y-7);ctx.restore();});world.ladders.forEach(l=>{rect(l.x,l.y,6,l.h,"#9b7046");rect(l.x+24,l.y,6,l.h,"#9b7046");for(let ry=l.y+8;ry<l.y+l.h;ry+=18)rect(l.x+5,ry,26,5,"#d9b17a");});world.checks.forEach(q=>{rect(q.x,q.y,5,52,"#26344b");rect(q.x+5,q.y,27,16,q.hit?"#39d5a4":"#ffcf58");});rect(world.goal.x,world.goal.y,5,75,"#26344b");rect(world.goal.x+5,world.goal.y,40,24,"#ffcf58");ctx.fillStyle="#172238";ctx.font="bold 14px sans-serif";ctx.fillText("FINISH",world.goal.x-camera-4,world.goal.y-10);if(mode==="race"){raceBots.forEach(b=>{b.trail.forEach(t=>{ctx.globalAlpha=t.life/16*.4;ctx.fillStyle=b.color;ctx.beginPath();ctx.arc(t.x-camera+12,t.y+22,4,0,Math.PI*2);ctx.fill();});ctx.globalAlpha=1;ctx.fillStyle=b.color;ctx.beginPath();ctx.arc(b.x-camera+12,b.y+8,8,0,Math.PI*2);ctx.fill();ctx.strokeStyle=b.color;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(b.x-camera+12,b.y+17);ctx.lineTo(b.x-camera+12,b.y+33);ctx.moveTo(b.x-camera+12,b.y+33);ctx.lineTo(b.x-camera+5,b.y+47);ctx.moveTo(b.x-camera+12,b.y+33);ctx.lineTo(b.x-camera+19,b.y+47);ctx.stroke();ctx.font="bold 11px sans-serif";ctx.fillStyle="#172238";ctx.fillText(b.name,b.x-camera-8,b.y-8);});raceTrail.forEach(t=>{ctx.globalAlpha=t.life/18*.45;ctx.fillStyle="#9b72ff";ctx.beginPath();ctx.arc(t.x-camera+12,t.y,5,0,Math.PI*2);ctx.fill();});ctx.globalAlpha=1;ctx.fillStyle="#172238";ctx.font="bold 17px sans-serif";ctx.fillText("⚡ "+raceElapsed.toFixed(2)+"s",W-125,34);}drawStick();if(mode==="race"&&countdownUntil>Date.now()){const left=Math.ceil((countdownUntil-Date.now())/1000);ctx.save();ctx.fillStyle="#14243ddd";ctx.fillRect(W/2-95,H/2-85,190,170);ctx.fillStyle="#fff";ctx.textAlign="center";ctx.font="bold 24px sans-serif";ctx.fillText("准备开始",W/2,H/2-35);ctx.font="bold 76px sans-serif";ctx.fillStyle="#ffdc70";ctx.fillText(String(left),W/2,H/2+55);ctx.restore();}if(mode==="race"){ctx.fillStyle="#fff";ctx.font="bold 12px sans-serif";ctx.fillText("极速竞赛 · 双倍速度 · 禁止滑铲",W/2-115,25);}ctx.fillStyle="#172238aa";ctx.fillRect(18,18,190,38);ctx.fillStyle="#fff";ctx.font="bold 16px sans-serif";ctx.fillText("LEVEL "+level+" · "+world.name,30,43);}
 function update(){
  clock++;
@@ -245,7 +331,7 @@ function update(){
   if(p.y>H+90)respawn();
   world.checks.forEach(q=>{if(!q.hit&&p.x+p.w>q.x-8&&p.x<q.x+34&&p.y+p.h>q.y){q.hit=true;checkpointX=q.x+12;checkpointY=q.y+52-p.h-2;message.textContent="检查点已保存！";}});
   // 只有角色到达三楼旗子所在位置并碰到旗帜，才算本关完成。
-  if(mode==="race"){raceElapsed=(Date.now()-raceStartAt)/1000;raceBots.forEach(b=>{if(b.x<world.goal.x+30){b.trail.push({x:b.x,y:b.y,life:16});if(b.trail.length>16)b.trail.shift();b.trail.forEach(t=>t.life--);b.trail=b.trail.filter(t=>t.life>0);b.x+=b.speed;b.y=b.x<850?382:b.x<1680?237:92;}});raceTrail.push({x:p.x,y:p.y+22,life:18});if(raceTrail.length>22)raceTrail.shift();raceTrail.forEach(t=>t.life--);raceTrail=raceTrail.filter(t=>t.life>0);const winner=raceBots.find(b=>b.x>=world.goal.x);if(winner)finishRace(false,winner.name);else if(p.x+p.w>world.goal.x&&p.x<world.goal.x+46&&p.y<world.goal.y+75&&p.y+p.h>world.goal.y)finishRace(true,"你");}else if(p.x+p.w>world.goal.x&&p.x<world.goal.x+46&&p.y<world.goal.y+75&&p.y+p.h>world.goal.y)completeLevel();
+  if(mode==="race"){raceElapsed=(Date.now()-raceStartAt)/1000;raceBots.forEach(b=>{if(b.x<world.goal.x+30){b.trail.push({x:b.x,y:b.y,life:16});if(b.trail.length>16)b.trail.shift();b.trail.forEach(t=>t.life--);b.trail=b.trail.filter(t=>t.life>0);b.x+=b.speed;b.y=b.x<1250?382:b.x<2500?237:92;}});raceTrail.push({x:p.x,y:p.y+22,life:18});if(raceTrail.length>22)raceTrail.shift();raceTrail.forEach(t=>t.life--);raceTrail=raceTrail.filter(t=>t.life>0);const winner=raceBots.find(b=>b.x>=world.goal.x);if(winner)finishRace(false,winner.name);else if(p.x+p.w>world.goal.x&&p.x<world.goal.x+46&&p.y<world.goal.y+75&&p.y+p.h>world.goal.y)finishRace(true,"你");}else if(p.x+p.w>world.goal.x&&p.x<world.goal.x+46&&p.y<world.goal.y+75&&p.y+p.h>world.goal.y)completeLevel();
   camera=Math.max(0,Math.min(world.length-W,p.x-300));
   message.textContent=mode==="race"?"比赛进行中！双倍速度 · 二段跳 · 禁止滑铲":(p.slideCooldown>0?"滑铲冷却："+(p.slideCooldown/60).toFixed(1)+" 秒":(p.climbing?"正在爬梯子":"滑铲就绪 · C 键滑铲"));
  }
