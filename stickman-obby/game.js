@@ -45,7 +45,7 @@ const battleArena=[
 const battleLoadouts=["突击步枪","狙击枪","冲锋枪","射手步枪","现代步枪"];
 function startBattle(){
  mode="battle";overlay.style.display="none";battleScore={blue:0,red:0};battleBullets=[];battleFireCooldown=0;
- const make=(name,team,x,y,weapon,player=false)=>({name,team,x,y,hp:100,maxHp:100,weapon,player,fire:Math.floor(Math.random()*20),dir:team==="blue"?1:-1,respawn:0,strafe:Math.random()<.5?-1:1});
+ const make=(name,team,x,y,weapon,player=false)=>({name,team,x,y,hp:100,maxHp:100,weapon,player,fire:Math.floor(Math.random()*20),dir:team==="blue"?1:-1,aimDir:team==="blue"?1:-1,jumpZ:0,jumpV:0,respawn:0,strafe:Math.random()<.5?-1:1});
  battleActors=[
   make("你","blue",85,280,battleWeapon,true),
   make("蓝队·突击手","blue",115,390,"突击步枪"),
@@ -54,7 +54,7 @@ function startBattle(){
   make("红队·精准射手","red",1600,390,"射手步枪"),
   make("红队·重装兵","red",1510,210,"现代步枪")
  ];
- message.textContent="方向键/WASD移动；靠近敌人自动瞄准射击！";
+ message.textContent="WASD/方向键移动 · 空格或↑跳跃躲子弹 · 自动瞄准射击！";
 }
 function battleBlocked(x,y,r=12){return battleArena.some(o=>x+r>o.x&&x-r<o.x+o.w&&y+r>o.y&&y-r<o.y+o.h);}
 function battleMove(a,dx,dy){
@@ -63,8 +63,9 @@ function battleMove(a,dx,dy){
  if(!battleBlocked(a.x,ny))a.y=ny;
 }
 function battleShoot(a,target){
- const st=battleStats[a.weapon]||battleStats["突击步枪"],dx=target.x-a.x,dy=target.y-a.y,d=Math.hypot(dx,dy)||1;
- battleBullets.push({x:a.x,y:a.y-24,vx:dx/d*st.speed,vy:dy/d*st.speed,team:a.team,owner:a,life:Math.ceil(st.range/st.speed),damage:st.damage,color:st.color});
+ const st=battleStats[a.weapon]||battleStats["突击步枪"],dx=target.x-a.x,dy=(target.y-24-(target.jumpZ||0))-(a.y-24-(a.jumpZ||0)),d=Math.hypot(dx,dy)||1;
+ a.aimDir=dx>=0?1:-1;
+ battleBullets.push({x:a.x+(a.aimDir>0?13:-13),y:a.y-24-(a.jumpZ||0),vx:dx/d*st.speed,vy:dy/d*st.speed,team:a.team,owner:a,life:Math.ceil(st.range/st.speed),damage:st.damage,color:st.color});
  a.fire=st.rate;
 }
 function updateBattle(){
@@ -75,7 +76,10 @@ function updateBattle(){
    const dx=(keys.ArrowRight||keys.d||keys.D?1:0)-(keys.ArrowLeft||keys.a||keys.A?1:0);
    const dy=(keys.ArrowDown||keys.s||keys.S?1:0)-(keys.ArrowUp||keys.w||keys.W?1:0);
    const n=Math.hypot(dx,dy)||1;battleMove(a,dx/n*4.1,dy/n*4.1);
+   const jumpKey=!!(keys[" "]||keys.ArrowUp||keys.w||keys.W);
+   if(jumpKey&&a.jumpZ===0&&a.jumpV===0)a.jumpV=-10.5;
   }
+  if(a.jumpV!==0||a.jumpZ>0){a.jumpZ+=a.jumpV;a.jumpV+=0.58;if(a.jumpZ<=0){a.jumpZ=0;a.jumpV=0;}}
   const foes=battleActors.filter(x=>x.team!==a.team&&x.hp>0&&!x.respawn);
   if(!foes.length)continue;
   const target=foes.reduce((best,x)=>Math.hypot(x.x-a.x,x.y-a.y)<Math.hypot(best.x-a.x,best.y-a.y)?x:best,foes[0]);
@@ -100,7 +104,7 @@ function updateBattle(){
  for(const b of battleBullets){
   b.x+=b.vx;b.y+=b.vy;b.life--;
   if(battleBlocked(b.x,b.y,3)){b.life=0;continue;}
-  const hit=battleActors.find(a=>a.team!==b.team&&a.hp>0&&!a.respawn&&Math.hypot(a.x-b.x,a.y-24-b.y)<17);
+  const hit=battleActors.find(a=>a.team!==b.team&&a.hp>0&&!a.respawn&&Math.hypot(a.x-b.x,a.y-24-(a.jumpZ||0)-b.y)<17);
   if(hit){
    hit.hp-=b.damage;b.life=0;
    if(hit.hp<=0){
@@ -118,7 +122,7 @@ function updateBattle(){
 }
 function drawBattleWeapon(a,x,y){
  const gun=a.weapon,metal="#263341",steel="#8798a8",dark="#111b27";
- ctx.save();ctx.translate(x+7,y-27);
+ ctx.save();ctx.translate(x+(a.aimDir<0?-7:7),y-27);ctx.scale(a.aimDir<0?-1:1,1);
  ctx.fillStyle=metal;ctx.strokeStyle=dark;ctx.lineWidth=1.5;
  if(gun==="狙击枪"){
   ctx.fillRect(0,-3,30,5);ctx.fillRect(26,-2,15,2);ctx.fillRect(8,-8,13,4);
@@ -143,7 +147,7 @@ function drawBattleWeapon(a,x,y){
  ctx.restore();
 }
 function drawBattleStick(a){
- const x=a.x,y=a.y,blue=a.team==="blue",main=blue?"#168cff":"#f04455",dark=blue?"#0753a5":"#9f2034";
+ const x=a.x,y=a.y-(a.jumpZ||0),blue=a.team==="blue",main=blue?"#168cff":"#f04455",dark=blue?"#0753a5":"#9f2034";
  ctx.save();ctx.lineCap="round";ctx.lineJoin="round";
  // legs and boots
  ctx.strokeStyle="#202b3b";ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(x-3,y-12);ctx.lineTo(x-9,y-2);ctx.lineTo(x-13,y);ctx.moveTo(x+3,y-12);ctx.lineTo(x+9,y-2);ctx.lineTo(x+13,y);ctx.stroke();
@@ -191,7 +195,7 @@ function drawBattle(){
  ctx.fillStyle="#55aaff";ctx.font="bold 22px sans-serif";ctx.fillText("蓝队  "+battleScore.blue,W/2-168,39);
  ctx.fillStyle="#fff";ctx.font="bold 18px sans-serif";ctx.fillText("先到 60 分获胜",W/2-45,37);
  ctx.fillStyle="#ff6873";ctx.font="bold 22px sans-serif";ctx.fillText(battleScore.red+"  红队",W/2+82,39);
- ctx.font="12px sans-serif";ctx.fillStyle="#26354a";ctx.fillText("方向键 / WASD 移动 · 自动瞄准射击 · 长距离战场",18,H-14);
+ ctx.font="12px sans-serif";ctx.fillStyle="#26354a";ctx.fillText("WASD 移动 · 空格/↑ 跳跃（可躲子弹） · 自动瞄准射击",18,H-14);
  battleBullets.forEach(b=>{const bx=b.x-battleCamera;if(bx<-5||bx>W+5)return;ctx.fillStyle=b.color;ctx.shadowColor=b.color;ctx.shadowBlur=9;ctx.beginPath();ctx.arc(bx,b.y,3.5,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;});
  battleActors.forEach(a=>{if(a.x-battleCamera<-50||a.x-battleCamera>W+50)return;const oldX=a.x;a.x-=battleCamera;if(!a.respawn)drawBattleStick(a);else{ctx.fillStyle="#fff";ctx.font="11px sans-serif";ctx.fillText("复活中",a.x-18,a.y-25);}a.x=oldX;});
 }
@@ -217,17 +221,17 @@ function startRace(index){
  floors.forEach((f,fi)=>{
   // distinct platform rhythm for each course; gaps and raised stepping ledges are kept jumpable.
   const gapPattern=[
-   [0,1,0,2,0,1,0,0,2,0,1,0],
-   [2,0,1,0,2,0,0,1,0,2,0,1],
-   [0,2,1,0,0,2,0,1,2,0,0,1],
-   [1,0,2,0,1,0,2,0,0,1,2,0]
+   [0,1,0,2,0,3,1,0,2,0,1,0],
+   [2,0,1,0,3,0,0,2,0,3,0,1],
+   [0,3,1,0,0,2,0,1,3,0,0,2],
+   [1,0,3,0,1,0,2,0,0,3,2,0]
   ][index%4];
-  const segment=100;
+  const segment=100,platformWidths=[[91,78,88,72],[70,94,76,86],[84,68,96,74],[76,90,70,98]][index%4];
   for(let j=0;j<12;j++){
    const x=f.start+8+j*segment,variation=gapPattern[j];
-   world.platforms.push({x,y:f.y-variation*18,w:segment-8,h:18});
+   world.platforms.push({x,y:f.y-variation*20,w:platformWidths[j%4],h:18});
    // light, varied hazards rather than a wall of obstacles
-   if((j+fi+index)%4===1)world.spikes.push({x:x+42,y:f.y-variation*18-15,w:22,h:15});
+   if((j+fi+index)%4===1)world.spikes.push({x:x+Math.min(platformWidths[j%4]-28,38),y:f.y-variation*20-15,w:22,h:15});
    if((j*2+fi+index)%7===3)world.lava.push({x:x+70,y:f.y+25,w:18,h:55});
   }
   world.platforms.push({x:f.end-12,y:f.y,w:20,h:100});
