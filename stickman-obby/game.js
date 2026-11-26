@@ -24,24 +24,151 @@ let level=1,world=null,p=null,camera=0,clock=0,mode="menu",won=false,deaths=0,ch
 let raceBots=[],raceTrail=[],raceStartAt=0,raceMapIndex=0,raceElapsed=0,raceFinished=false,raceDifficulty="中等",raceLocked=false;
 let battleDifficulty="中等",battleActors=[],battleBullets=[],battleScore={blue:0,red:0},battleWeapon="突击步枪",battleFireCooldown=0;
 const battleGuns=[{name:"突击步枪",cost:0,damage:25},{name:"狙击枪",cost:300,damage:100},{name:"射手步枪",cost:220,damage:48},{name:"冲锋枪",cost:180,damage:14},{name:"现代步枪",cost:420,damage:32}];
-function showBattleMenu(){mode="battlemenu";overlay.style.display="flex";overlay.innerHTML='<div class="panel"><h1>团队枪战</h1><p>💎 '+save.gems+'</p><p>难度：'+["简单","中等","困难","超困难"].map(d=>'<button data-d="'+d+'">'+d+'</button>').join("")+'</p><div class="cards">'+battleGuns.map(w=>'<div class="item"><b>'+w.name+'</b><p>'+(save.battleWeapons.includes(w.name)?"已拥有":w.cost+" 💎")+'</p><button data-w="'+w.name+'">'+(save.battleWeapons.includes(w.name)?"装备":"购买")+'</button></div>').join("")+'</div><button id="bs">开始</button><button id="bh">返回</button></div>';overlay.querySelectorAll("[data-d]").forEach(b=>b.onclick=()=>{battleDifficulty=b.dataset.d;showBattleMenu();});overlay.querySelectorAll("[data-w]").forEach(b=>b.onclick=()=>{let w=battleGuns.find(x=>x.name===b.dataset.w);if(!save.battleWeapons.includes(w.name)&&save.gems>=w.cost){save.gems-=w.cost;save.battleWeapons.push(w.name);persist();}if(save.battleWeapons.includes(w.name))battleWeapon=w.name;showBattleMenu();});document.getElementById("bs").onclick=startBattle;document.getElementById("bh").onclick=showHome;}
-function startBattle(){mode="battle";overlay.style.display="none";battleScore={blue:0,red:0};battleBullets=[];battleFireCooldown=0;battleActors=[{name:"你",team:"blue",x:80,y:350,hp:100,player:true},{name:"蓝队AI 1",team:"blue",x:170,y:350,hp:100},{name:"蓝队AI 2",team:"blue",x:245,y:350,hp:100},{name:"红队AI 1",team:"red",x:650,y:350,hp:100},{name:"红队AI 2",team:"red",x:735,y:350,hp:100},{name:"红队AI 3",team:"red",x:820,y:350,hp:100}];message.textContent="自动射击已开启：靠近敌人即可开火！";}
-function updateBattle(){
- const me=battleActors[0];me.x=Math.max(0,Math.min(W-25,me.x+((keys.ArrowRight||keys.d||keys.D?1:0)-(keys.ArrowLeft||keys.a||keys.A?1:0))*4));
- if(battleFireCooldown>0)battleFireCooldown--;
- const enemies=battleActors.filter(a=>a.team!==me.team);
- const target=enemies.reduce((best,a)=>Math.abs(a.x-me.x)<Math.abs(best.x-me.x)?a:best,enemies[0]);
- if(target&&Math.abs(target.x-me.x)<=320&&battleFireCooldown===0){
-  const dir=target.x>=me.x?1:-1,speed={"突击步枪":9,"狙击枪":13,"射手步枪":11,"冲锋枪":10,"现代步枪":10}[battleWeapon]||9;
-  const delay={"突击步枪":14,"狙击枪":48,"射手步枪":25,"冲锋枪":6,"现代步枪":10}[battleWeapon]||14;
-  battleBullets.push({x:me.x+(dir>0?25:0),y:370,vx:dir*speed,team:"blue",life:90,damage:battleGuns.find(w=>w.name===battleWeapon).damage});battleFireCooldown=delay;
- }
- battleActors.slice(1).forEach(a=>{const foes=battleActors.filter(x=>x.team!==a.team),foe=foes.reduce((best,x)=>Math.abs(x.x-a.x)<Math.abs(best.x-a.x)?x:best,foes[0]),chance=({"简单":.008,"中等":.016,"困难":.027,"超困难":.04}[battleDifficulty]||.016);if(foe&&Math.abs(foe.x-a.x)<360&&Math.random()<chance)battleBullets.push({x:a.x+(foe.x>=a.x?25:0),y:370,vx:(foe.x>=a.x?1:-1)*8,team:a.team,life:90,damage:20});});
- battleBullets.forEach(b=>{b.x+=b.vx;b.life--;const a=battleActors.find(x=>x.team!==b.team&&Math.abs(b.x-(x.x+12))<15);if(a){a.hp-=b.damage;b.life=0;if(a.hp<=0){battleScore[b.team]++;a.hp=100;a.x=a.team==="red"?650:150;}}});
- battleBullets=battleBullets.filter(b=>b.life>0&&b.x>=0&&b.x<W);
- if(battleScore.blue>=10||battleScore.red>=10){mode="battleover";overlay.style.display="flex";overlay.innerHTML='<div class="panel"><h1>'+(battleScore.blue>=10?"蓝队胜利":"红队胜利")+'</h1><p>'+battleScore.blue+" : "+battleScore.red+'</p><button id="ba">再来</button><button id="bh">首页</button></div>';document.getElementById("ba").onclick=startBattle;document.getElementById("bh").onclick=showHome;}
+function showBattleMenu(){mode="battlemenu";overlay.style.display="flex";overlay.innerHTML='<div class="panel"><h1>团队枪战</h1><p>💎 '+save.gems+'</p><p>难度：'+["简单","中等","困难","超困难"].map(d=>'<button data-d="'+d+'">'+d+'</button>').join("")+'</p><div class="cards">'+battleGuns.map(w=>'<div class="item"><b>'+w.name+'</b><p>'+(save.battleWeapons.includes(w.name)?"已拥有":w.cost+" 💎")+'</p><button data-w="'+w.name+'">'+(save.battleWeapons.includes(w.name)?"装备":"购买")+'</button></div>').join("")+'</div><p>先拿到 60 分的队伍获胜！</p><button id="bs">开始枪战</button><button id="bh">返回</button></div>';overlay.querySelectorAll("[data-d]").forEach(b=>b.onclick=()=>{battleDifficulty=b.dataset.d;showBattleMenu();});overlay.querySelectorAll("[data-w]").forEach(b=>b.onclick=()=>{let w=battleGuns.find(x=>x.name===b.dataset.w);if(!save.battleWeapons.includes(w.name)&&save.gems>=w.cost){save.gems-=w.cost;save.battleWeapons.push(w.name);persist();}if(save.battleWeapons.includes(w.name))battleWeapon=w.name;showBattleMenu();});document.getElementById("bs").onclick=startBattle;document.getElementById("bh").onclick=showHome;}
+const battleStats={
+ "突击步枪":{damage:22,rate:13,speed:9,range:520,color:"#ffe28a"},
+ "狙击枪":{damage:65,rate:52,speed:15,range:760,color:"#ff9c69"},
+ "射手步枪":{damage:38,rate:27,speed:12,range:650,color:"#a8f0ff"},
+ "冲锋枪":{damage:12,rate:5,speed:10,range:380,color:"#ffe28a"},
+ "现代步枪":{damage:27,rate:10,speed:11,range:560,color:"#c8ff9c"}
+};
+const battleArena=[
+ {x:145,y:115,w:150,h:78,type:"house"},{x:665,y:112,w:150,h:82,type:"house"},
+ {x:420,y:82,w:115,h:58,type:"wall"},{x:350,y:260,w:90,h:38,type:"cover"},
+ {x:535,y:255,w:90,h:38,type:"cover"},{x:190,y:345,w:130,h:32,type:"cover"},
+ {x:650,y:345,w:130,h:32,type:"cover"},{x:450,y:405,w:60,h:38,type:"crate"},
+ {x:55,y:235,w:70,h:42,type:"crate"},{x:835,y:235,w:70,h:42,type:"crate"}
+];
+const battleLoadouts=["突击步枪","狙击枪","冲锋枪","射手步枪","现代步枪"];
+function startBattle(){
+ mode="battle";overlay.style.display="none";battleScore={blue:0,red:0};battleBullets=[];battleFireCooldown=0;
+ const make=(name,team,x,y,weapon,player=false)=>({name,team,x,y,hp:100,maxHp:100,weapon,player,fire:Math.floor(Math.random()*20),dir:team==="blue"?1:-1,respawn:0,strafe:Math.random()<.5?-1:1});
+ battleActors=[
+  make("你","blue",85,280,battleWeapon,true),
+  make("蓝队·突击手","blue",115,390,"突击步枪"),
+  make("蓝队·狙击手","blue",220,210,"狙击枪"),
+  make("红队·冲锋手","red",875,280,"冲锋枪"),
+  make("红队·精准射手","red",820,390,"射手步枪"),
+  make("红队·重装兵","red",740,210,"现代步枪")
+ ];
+ message.textContent="方向键/WASD移动；靠近敌人自动瞄准射击！";
 }
-function drawBattle(){ctx.fillStyle="#b9dfff";ctx.fillRect(0,0,W,H);ctx.fillStyle="#83b875";ctx.fillRect(0,400,W,100);ctx.fillStyle="#fff";ctx.font="bold 22px sans-serif";ctx.fillText("蓝队 "+battleScore.blue+"　红队 "+battleScore.red,30,38);battleActors.forEach(a=>{ctx.fillStyle=a.team==="blue"?"#248cff":"#ef4555";ctx.fillRect(a.x,350,25,48);ctx.fillStyle="#172238";ctx.font="11px sans-serif";ctx.fillText(a.name,a.x-5,340);});battleBullets.forEach(b=>{ctx.fillStyle="#ffe27a";ctx.fillRect(b.x,370,8,3);});}
+function battleBlocked(x,y,r=12){return battleArena.some(o=>x+r>o.x&&x-r<o.x+o.w&&y+r>o.y&&y-r<o.y+o.h);}
+function battleMove(a,dx,dy){
+ const nx=Math.max(28,Math.min(W-28,a.x+dx)),ny=Math.max(90,Math.min(455,a.y+dy));
+ if(!battleBlocked(nx,a.y))a.x=nx;
+ if(!battleBlocked(a.x,ny))a.y=ny;
+}
+function battleShoot(a,target){
+ const st=battleStats[a.weapon]||battleStats["突击步枪"],dx=target.x-a.x,dy=target.y-a.y,d=Math.hypot(dx,dy)||1;
+ battleBullets.push({x:a.x,y:a.y-24,vx:dx/d*st.speed,vy:dy/d*st.speed,team:a.team,owner:a,life:Math.ceil(st.range/st.speed),damage:st.damage,color:st.color});
+ a.fire=st.rate;
+}
+function updateBattle(){
+ const difficulty={"简单":.72,"中等":.9,"困难":1.08,"超困难":1.22}[battleDifficulty]||.9;
+ for(const a of battleActors){
+  if(a.respawn>0){a.respawn--;continue;}
+  if(a.player){
+   const dx=(keys.ArrowRight||keys.d||keys.D?1:0)-(keys.ArrowLeft||keys.a||keys.A?1:0);
+   const dy=(keys.ArrowDown||keys.s||keys.S?1:0)-(keys.ArrowUp||keys.w||keys.W?1:0);
+   const n=Math.hypot(dx,dy)||1;battleMove(a,dx/n*4.1,dy/n*4.1);
+  }
+  const foes=battleActors.filter(x=>x.team!==a.team&&x.hp>0&&!x.respawn);
+  if(!foes.length)continue;
+  const target=foes.reduce((best,x)=>Math.hypot(x.x-a.x,x.y-a.y)<Math.hypot(best.x-a.x,best.y-a.y)?x:best,foes[0]);
+  const dx=target.x-a.x,dy=target.y-a.y,dist=Math.hypot(dx,dy)||1,st=battleStats[a.weapon]||battleStats["突击步枪"];
+  if(!a.player){
+   let mx=0,my=0;
+   if(dist>st.range*.58){mx=dx/dist;my=dy/dist;}
+   else if(dist<st.range*.24){mx=-dx/dist;my=-dy/dist;}
+   else {mx=(-dy/dist)*a.strafe*.48;my=(dx/dist)*a.strafe*.48;}
+   const speed=(a.weapon==="狙击枪"?1.55:2.15)*difficulty;
+   battleMove(a,mx*speed,my*speed);
+   if(battleBlocked(a.x+mx*18,a.y+my*18))a.strafe*=-1;
+   if(Math.random()<.008)a.strafe*=-1;
+  }
+  if(a.fire>0)a.fire--;
+  if(dist<st.range&&a.fire<=0){
+   const chance=a.player?1:(.56*difficulty);
+   if(Math.random()<chance)battleShoot(a,target);
+   else a.fire=8;
+  }
+ }
+ for(const b of battleBullets){
+  b.x+=b.vx;b.y+=b.vy;b.life--;
+  if(battleBlocked(b.x,b.y,3)){b.life=0;continue;}
+  const hit=battleActors.find(a=>a.team!==b.team&&a.hp>0&&!a.respawn&&Math.hypot(a.x-b.x,a.y-24-b.y)<17);
+  if(hit){
+   hit.hp-=b.damage;b.life=0;
+   if(hit.hp<=0){
+    battleScore[b.team]++;
+    hit.hp=0;hit.respawn=85;hit.x=hit.team==="blue"?85:875;hit.y=280;
+   }
+  }
+ }
+ battleBullets=battleBullets.filter(b=>b.life>0&&b.x>0&&b.x<W&&b.y>55&&b.y<H);
+ if(battleScore.blue>=60||battleScore.red>=60){
+  mode="battleover";overlay.style.display="flex";
+  overlay.innerHTML='<div class="panel"><h1>'+(battleScore.blue>=60?"🏆 蓝队胜利！":"🔴 红队胜利！")+'</h1><p>最终比分：'+battleScore.blue+" : "+battleScore.red+'</p><p>先消灭对方 60 人，赢得比赛！</p><button id="ba">再来一局</button><button id="bh">返回首页</button></div>';
+  document.getElementById("ba").onclick=startBattle;document.getElementById("bh").onclick=showHome;
+ }
+}
+function drawBattleStick(a){
+ const x=a.x,y=a.y,blue=a.team==="blue",main=blue?"#168cff":"#f04455",dark=blue?"#0753a5":"#9f2034";
+ ctx.save();ctx.lineCap="round";ctx.lineJoin="round";
+ // legs and boots
+ ctx.strokeStyle="#202b3b";ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(x-3,y-12);ctx.lineTo(x-9,y-2);ctx.lineTo(x-13,y);ctx.moveTo(x+3,y-12);ctx.lineTo(x+9,y-2);ctx.lineTo(x+13,y);ctx.stroke();
+ // arms
+ ctx.strokeStyle="#d7a77e";ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(x-5,y-31);ctx.lineTo(x-14,y-22);ctx.lineTo(x-10,y-17);ctx.moveTo(x+5,y-31);ctx.lineTo(x+13,y-24);ctx.lineTo(x+17,y-27);ctx.stroke();
+ // armored vest and body
+ ctx.fillStyle=main;ctx.beginPath();ctx.roundRect(x-9,y-39,18,28,5);ctx.fill();
+ ctx.fillStyle=dark;ctx.fillRect(x-7,y-34,14,17);ctx.fillStyle="#d9e3ee";ctx.fillRect(x-2,y-32,4,13);
+ ctx.strokeStyle="#202b3b";ctx.lineWidth=2;ctx.strokeRect(x-9,y-39,18,28);
+ // neck and head
+ ctx.fillStyle="#d7a77e";ctx.fillRect(x-3,y-44,6,6);
+ ctx.fillStyle="#e5b78d";ctx.beginPath();ctx.arc(x,y-51,8,0,Math.PI*2);ctx.fill();
+ // helmet with brim and visor
+ ctx.fillStyle=dark;ctx.beginPath();ctx.arc(x,y-53,9,Math.PI,Math.PI*2);ctx.lineTo(x+10,y-51);ctx.lineTo(x-10,y-51);ctx.closePath();ctx.fill();
+ ctx.fillStyle="#d7e8f7";ctx.fillRect(x+1,y-53,5,2);
+ // weapon in hands
+ ctx.strokeStyle="#242c38";ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(x+8,y-27);ctx.lineTo(x+20,y-27);ctx.stroke();
+ ctx.fillStyle="#596675";ctx.fillRect(x+13,y-30,12,5);
+ ctx.restore();
+ // health bar above each helmet
+ const bw=38,bx=x-bw/2,by=y-70;
+ ctx.fillStyle="#283244";ctx.fillRect(bx-1,by-1,bw+2,6);
+ ctx.fillStyle=a.hp>55?"#35d477":a.hp>25?"#ffc247":"#ff4358";
+ ctx.fillRect(bx,by,bw*Math.max(0,a.hp/a.maxHp),4);
+ ctx.font="bold 10px sans-serif";ctx.textAlign="center";ctx.fillStyle="#172238";ctx.fillText(a.name+(a.player?"（你）":""),x,by-5);ctx.textAlign="left";
+}
+function drawBattle(){
+ const sky=ctx.createLinearGradient(0,0,0,H);sky.addColorStop(0,"#b8d9ed");sky.addColorStop(1,"#d9e5c9");ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
+ // battlefield ground and lanes
+ ctx.fillStyle="#a9b58c";ctx.fillRect(0,55,W,H-55);
+ ctx.fillStyle="#c8b99b";ctx.fillRect(0,205,W,145);
+ ctx.fillStyle="#9cae7d";for(let x=0;x<W;x+=48)ctx.fillRect(x,55,2,H-55);
+ // houses, crates and defensive cover
+ battleArena.forEach(o=>{
+  if(o.type==="house"){
+   ctx.fillStyle="#7e8995";ctx.fillRect(o.x,o.y,o.w,o.h);
+   ctx.fillStyle="#a94f46";ctx.beginPath();ctx.moveTo(o.x-8,o.y);ctx.lineTo(o.x+o.w/2,o.y-35);ctx.lineTo(o.x+o.w+8,o.y);ctx.closePath();ctx.fill();
+   ctx.fillStyle="#d6e4eb";ctx.fillRect(o.x+18,o.y+18,28,24);ctx.fillRect(o.x+o.w-46,o.y+18,28,24);
+   ctx.fillStyle="#594b42";ctx.fillRect(o.x+o.w/2-13,o.y+40,26,38);
+  }else{
+   ctx.fillStyle=o.type==="cover"?"#6c806e":"#9b805d";ctx.fillRect(o.x,o.y,o.w,o.h);
+   ctx.fillStyle="#d4d0b5";ctx.fillRect(o.x,o.y,o.w,5);
+   ctx.strokeStyle="#56665a";ctx.strokeRect(o.x,o.y,o.w,o.h);
+  }
+ });
+ // scoreboard
+ ctx.fillStyle="#18263ddd";ctx.fillRect(W/2-190,10,380,42);
+ ctx.fillStyle="#55aaff";ctx.font="bold 22px sans-serif";ctx.fillText("蓝队  "+battleScore.blue, W/2-168,39);
+ ctx.fillStyle="#fff";ctx.font="bold 18px sans-serif";ctx.fillText("先到 60 分获胜",W/2-45,37);
+ ctx.fillStyle="#ff6873";ctx.font="bold 22px sans-serif";ctx.fillText(battleScore.red+"  红队",W/2+82,39);
+ ctx.font="12px sans-serif";ctx.fillStyle="#26354a";ctx.fillText("方向键 / WASD 移动 · 自动瞄准射击 · 利用房屋和掩体",18,H-14);
+ battleBullets.forEach(b=>{ctx.fillStyle=b.color;ctx.shadowColor=b.color;ctx.shadowBlur=9;ctx.beginPath();ctx.arc(b.x,b.y,3.5,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;});
+ battleActors.forEach(a=>{if(!a.respawn)drawBattleStick(a);else{ctx.fillStyle="#fff";ctx.font="11px sans-serif";ctx.fillText("复活中",a.x-18,a.y-25);}});
+}
 const raceDifficultySpeeds={"简单":[4.8,5.2,5.6],"中等":[6.2,6.7,7.2],"困难":[7.8,8.3,8.8],"超困难":[9.2,9.8,10.4]};
 const raceMaps=["霓虹疾速城","云端冲刺塔","熔岩边缘赛道","冰晶闪电道"];
 function raceRecords(){try{return JSON.parse(localStorage.getItem("stickmanRaceRecords")||"[]");}catch(e){return [];}}
