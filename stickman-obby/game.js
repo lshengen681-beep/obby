@@ -45,7 +45,7 @@ const battleArena=[
 const battleLoadouts=["突击步枪","狙击枪","冲锋枪","射手步枪","现代步枪"];
 function startBattle(){
  mode="battle";overlay.style.display="none";battleScore={blue:0,red:0};battleBullets=[];battleFireCooldown=0;
- const make=(name,team,x,y,weapon,player=false)=>({name,team,x,y,hp:100,maxHp:100,weapon,player,fire:Math.floor(Math.random()*20),dir:team==="blue"?1:-1,aimDir:team==="blue"?1:-1,jumpZ:0,jumpV:0,respawn:0,strafe:Math.random()<.5?-1:1});
+ const make=(name,team,x,y,weapon,player=false)=>({name,team,x,y,hp:100,maxHp:100,weapon,player,fire:Math.floor(Math.random()*20),dir:team==="blue"?1:-1,aimDir:team==="blue"?1:-1,jumpZ:0,jumpV:0,jumpHeld:false,respawn:0,strafe:Math.random()<.5?-1:1});
  battleActors=[
   make("你","blue",85,280,battleWeapon,true),
   make("蓝队·突击手","blue",115,390,"突击步枪"),
@@ -77,7 +77,8 @@ function updateBattle(){
    const dy=(keys.ArrowDown||keys.s||keys.S?1:0)-(keys.ArrowUp||keys.w||keys.W?1:0);
    const n=Math.hypot(dx,dy)||1;battleMove(a,dx/n*4.1,dy/n*4.1);
    const jumpKey=!!(keys[" "]||keys.ArrowUp||keys.w||keys.W);
-   if(jumpKey&&a.jumpZ===0&&a.jumpV===0)a.jumpV=-10.5;
+   if(jumpKey&&!a.jumpHeld&&a.jumpZ===0&&a.jumpV===0)a.jumpV=-10.5;
+   a.jumpHeld=jumpKey;
   }
   if(a.jumpV!==0||a.jumpZ>0){a.jumpZ+=a.jumpV;a.jumpV+=0.58;if(a.jumpZ<=0){a.jumpZ=0;a.jumpV=0;}}
   const foes=battleActors.filter(x=>x.team!==a.team&&x.hp>0&&!x.respawn);
